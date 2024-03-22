@@ -1,0 +1,48 @@
+.main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #121212; /* Dark background */
+}
+
+.body {
+    width: 80%;
+    max-width: 1200px;
+}
+
+.title {
+    font-size: 2em;
+    color: #fff; /* White text for better contrast on dark background */
+    text-align: center;
+}
+
+.description {
+    font-size: 1.2em;
+    color: #ddd; /* Light grey text for better contrast on dark background */
+    text-align: center;
+    margin-bottom: 2em;
+}
+
+.grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background-color: #1e1e1e; /* Darker background for the card */
+    border-radius: 10px;
+    box-shadow: 0px 2px 5px rgba(255, 255, 255, 0.1); /* Light box shadow */
+    width: 100%;
+    padding: 20px;
+    text-decoration: none;
+    color: #ddd; /* Light grey text for better contrast on dark background */
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 5px 15px rgba(255, 255, 255, 0.2); /* Lighter box shadow on hover */
+}

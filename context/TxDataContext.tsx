@@ -24,11 +24,12 @@ interface TxData {
   txtype: string;
   budget_month: string;
   send_message: boolean;
+  provider: string;
   // other properties of TxData...
 }
 
 interface TxDataContextProps {
-  TxData: TxData;
+  txData: TxData;
   setTxData: React.Dispatch<React.SetStateAction<TxData>>;
 }
 
@@ -39,7 +40,7 @@ interface TxDataProviderProps {
 }
 
 export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
-  const [TxData, setTxData] = useState<TxData>({ 
+  const [txData, setTxData] = useState<TxData>({ 
   group: '',
   project:'',
   project_id:'',
@@ -63,11 +64,12 @@ export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
   txtype:'',
   budget_month: new Date().toISOString().slice(0, 7),
   send_message:true,
+  provider: '',
    /* initialize other properties as needed */ 
   });
 
   return (
-    <TxDataContext.Provider value={{ TxData, setTxData }}>
+    <TxDataContext.Provider value={{ txData, setTxData }}>
       {children}
     </TxDataContext.Provider>
   );

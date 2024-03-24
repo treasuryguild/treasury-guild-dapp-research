@@ -1,21 +1,51 @@
+// components/PolkadotWalletConnect.tsx
 import React, { useState, useEffect } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
+import { useTxData } from '../context/TxDataContext';
+
+const providers = [
+  { name: 'Aleph Zero Testnet', url: 'wss://ws.test.azero.dev' },
+  { name: 'Polkadot Mainnet', url: 'wss://rpc.polkadot.io' },
+  // Add more providers as needed
+];
 
 const PolkadotWalletConnect: React.FC = () => {
   const [accounts, setAccounts] = useState<InjectedAccountWithMeta[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null); // State to hold the selected account
   const [status, setStatus] = useState<string>('Not connected');
   const [api, setApi] = useState<ApiPromise | null>(null);
+  const { txData, setTxData } = useTxData();
+  const [selectedProvider, setSelectedProvider] = useState(providers[0].url); // Default to the first provider
 
   useEffect(() => {
     const setup = async () => {
-      const wsProvider = new WsProvider('wss://rpc.polkadot.io');
+      const wsProvider = new WsProvider(selectedProvider);
       const api = await ApiPromise.create({ provider: wsProvider });
       setApi(api);
+      console.log(api, selectedProvider )
     };
     setup();
   }, []);
+
+  useEffect(() => {
+    setTxData({ ...txData, provider: selectedProvider });
+
+    console.log("txData");
+  }, [selectedProvider]);
+
+  useEffect(() => {
+    if (!api) return;
+
+    (async () => {
+      const time = await api.query.timestamp.now();
+      console.log(`Last timestamp: ${time.toPrimitive() as String}`);
+    })();
+
+    return () => {
+      api.disconnect();
+    };
+  }, [api]);
 
   const enableAndFetchAccounts = async () => {
     if (typeof window === 'undefined') return null;
@@ -39,7 +69,8 @@ const PolkadotWalletConnect: React.FC = () => {
         setAccounts(accounts);
         console.log(accounts)
         setStatus('Connected');
-        setSelectedAccount(accounts[0].address); // Automatically select the first account
+        setSelectedAccount(accounts[0].address); 
+        setTxData({ ...txData, wallet: accounts[0].address });
       } else {
         setStatus('Not connected');
       }
@@ -53,7 +84,8 @@ const PolkadotWalletConnect: React.FC = () => {
     if (accounts) {
       setAccounts(accounts);
       setStatus('Connected');
-      setSelectedAccount(accounts[0].address); // Automatically select the first account
+      setSelectedAccount(accounts[0].address); 
+      setTxData({ ...txData, wallet: accounts[0].address });
       localStorage.removeItem('isWalletDisconnected');
     } else {
       setStatus('No extension found or access denied');
@@ -63,16 +95,24 @@ const PolkadotWalletConnect: React.FC = () => {
   const disconnectPolkadotWallet = () => {
     setAccounts([]);
     setSelectedAccount(null);
+    setTxData({ ...txData, wallet: '' });
     setStatus('Not connected');
     localStorage.setItem('isWalletDisconnected', 'true');
   };
 
   const handleAccountChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedAccount(event.target.value);
+    setTxData({ ...txData, wallet: event.target.value });
+    console.log(event.target.value);
   };
 
   return (
     <div>
+      <select value={selectedProvider} onChange={(e) => setSelectedProvider(e.target.value)}>
+        {providers.map((provider, index) => (
+          <option key={index} value={provider.url}>{provider.name}</option>
+        ))}
+      </select>
       {status !== 'Connected' ? (
         <button onClick={connectPolkadotWallet}>Connect Polkadot Wallet</button>
       ) : (
@@ -80,7 +120,7 @@ const PolkadotWalletConnect: React.FC = () => {
           <button onClick={disconnectPolkadotWallet}>Disconnect Polkadot Wallet</button>
           <select value={selectedAccount || ''} onChange={handleAccountChange}>
             {accounts.map((account) => (
-              <option key={account.address+account.meta.source} value={account.address}>
+              <option key={account.meta.name + account.meta.source} value={account.address}>
                 {account.meta.name + " " + account.meta.source}
               </option>
             ))}
@@ -91,9 +131,8 @@ const PolkadotWalletConnect: React.FC = () => {
       {accounts.length > 0 && (
         <div>
           <h4>Connected Accounts:</h4>
-          {accounts.map((account, index) => (
-            <div key={index}>{account.address}</div>
-          ))}
+          {selectedAccount}
+          <h4>Balance</h4>
         </div>
       )}
     </div>

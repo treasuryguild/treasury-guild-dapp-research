@@ -1,3 +1,4 @@
+// Sample
 import React, { ChangeEvent, useState, useEffect } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { web3Accounts, web3Enable } from '@polkadot/extension-dapp';

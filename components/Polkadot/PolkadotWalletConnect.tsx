@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
-import { useTxData } from '../context/TxDataContext';
+import { useTxData } from '../../context/TxDataContext';
 
 const providers = [
   { name: 'Aleph Zero Testnet', url: 'wss://ws.test.azero.dev' },
@@ -17,20 +17,28 @@ const PolkadotWalletConnect: React.FC = () => {
   const [api, setApi] = useState<ApiPromise | null>(null);
   const { txData, setTxData } = useTxData();
   const [selectedProvider, setSelectedProvider] = useState(providers[0].url); // Default to the first provider
+  const [balance, setBalance] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [tokenDecimals, setTokenDecimals] = useState(0);
 
-  useEffect(() => {
-    const setup = async () => {
-      const wsProvider = new WsProvider(selectedProvider);
-      const api = await ApiPromise.create({ provider: wsProvider });
-      setApi(api);
-      console.log(api, selectedProvider )
-    };
+  const setup = async () => {
+    setLoading(true);
+    const wsProvider = new WsProvider(selectedProvider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    const decimals = api.registry.chainDecimals[0];
+    setTokenDecimals(decimals);
+    setApi(api);
+    console.log(api, selectedProvider )
+    setLoading(false);
+  };
+
+  useEffect(() => { 
     setup();
   }, []);
 
   useEffect(() => {
     setTxData({ ...txData, provider: selectedProvider });
-
+    setup();
     console.log("txData");
   }, [selectedProvider]);
 
@@ -42,9 +50,9 @@ const PolkadotWalletConnect: React.FC = () => {
       console.log(`Last timestamp: ${time.toPrimitive() as String}`);
     })();
 
-    return () => {
+    /*return () => {
       api.disconnect();
-    };
+    };*/
   }, [api]);
 
   const enableAndFetchAccounts = async () => {
@@ -77,6 +85,24 @@ const PolkadotWalletConnect: React.FC = () => {
     };
     checkForWalletConnection();
   }, []);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+        if (!api || !txData.wallet) {
+            setBalance('');
+            return;
+        }
+
+        const { data: { free: balance } } = await (api.query.system.account(txData.wallet) as any);
+        const balanceInPlanck = balance.toBigInt();
+        const balanceInDOT = balanceInPlanck ;
+        const finalBalance = Number(balanceInDOT) / (10 ** (tokenDecimals));
+        setBalance((finalBalance).toFixed(4));
+        console.log('Balance:', finalBalance);
+    };
+
+    fetchBalance();
+}, [api, txData.wallet]);
 
   const connectPolkadotWallet = async () => {
     setStatus('Connecting...');
@@ -130,9 +156,11 @@ const PolkadotWalletConnect: React.FC = () => {
       <p>Status: {status}</p>
       {accounts.length > 0 && (
         <div>
-          <h4>Connected Accounts:</h4>
-          {selectedAccount}
           <h4>Balance</h4>
+          <div>
+            <p>Account Address: {selectedAccount}</p>
+            <p>Balance: {loading ? 'Loading...' : balance}</p>
+          </div>
         </div>
       )}
     </div>

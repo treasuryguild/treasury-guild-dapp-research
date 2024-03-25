@@ -1,9 +1,11 @@
 // pages/txbuilder/index.tsx
 import React, { useState, useEffect } from 'react';
 import TxLayout from '../../layouts/TxLayout'; // Adjust the path as necessary
-import PolkadotTxBuilder from '../../components/PolkadotTxBuilder';
-import CardanoTxBuilder from '../../components/CardanoTxBuilder'; // Assuming a similar component for Cardano
+import PolkadotTxBuilder from '../../components/Polkadot/PolkadotTxBuilder';
+import CardanoTxBuilder from '../../components/Cardano/CardanoTxBuilder'; // Assuming a similar component for Cardano
 import WalletConnector from '../../components/WalletConnector';
+import PolkadotWalletConnect from '../../components/Polkadot/PolkadotWalletConnect';
+import CardanoWalletConnect from '../../components/Cardano/CardanoWalletConnect';
 import { useTxData } from '../../context/TxDataContext';
 
 export default function TxBuilder() {
@@ -30,21 +32,23 @@ export default function TxBuilder() {
   return (
     <TxLayout>
       <h1>Transaction Builder</h1>
-      <h3>Selected network - {blockchain}</h3>
-      <WalletConnector />
-      <p>Use this page to build and submit transactions to the selected network.</p>
-
-      {/* UI for selecting the blockchain */}
       <div>
         <button onClick={() => setBlockchain('Polkadot')}>Polkadot</button>
         <button onClick={() => setBlockchain('Cardano')}>Cardano</button>
       </div>
+      <h3>Selected network - {blockchain}</h3>
+      <p>Use this page to build and submit transactions to the selected network.</p>
 
-      {/* Conditionally render the transaction builder based on the selection */}
-      {(blockchain === 'Polkadot' && wsProvider) ? (
-        <PolkadotTxBuilder />
+      {(blockchain === 'Polkadot') ? (
+        <>
+          <PolkadotWalletConnect />
+          <PolkadotTxBuilder />
+        </>
       ) : (
-        <CardanoTxBuilder />
+        <>
+          <CardanoWalletConnect />
+          <CardanoTxBuilder />
+        </>
       )}
     </TxLayout>
   );

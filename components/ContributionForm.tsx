@@ -1,100 +1,147 @@
 // components/ContributionForm.jsx
-
 import React, { useState } from 'react';
+import styles from '../styles/ContributionForm.module.css';
 
-function ContributionForm({ onSubmit }: any) {
+function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: string[] }) {
   const [contributions, setContributions] = useState([
-    { name: '', labels: '', date: new Date().toISOString().split('T')[0], contributors: [{ walletAddress: '', role: '', amount: '' }] }
+    { id: 1, name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', role: '', tokenAmounts: tokens.map(token => ({ token, amount: '' })) }
   ]);
 
-  const handleChange = (index: any, field: any, value: any) => {
-    const newContributions: any = [...contributions];
-    if (field === 'name' || field === 'labels' || field === 'date') {
-      newContributions[index][field] = value;
-    } else { // Updating contributors
-      const [contributorIndex, contributorField] = field.split('.');
-      newContributions[index].contributors[contributorIndex][contributorField] = value;
-    }
-    setContributions(newContributions);
-  };
+  // Unique ID for new contributions
+  const getNextId = () => Math.max(...contributions.map(c => c.id)) + 1;
 
-  const addContributor = (index: any) => {
-    const newContributions = [...contributions];
-    newContributions[index].contributors.push({ walletAddress: '', role: '', amount: '' });
+  const handleChange = (id: any, field: any, value: any, token = null) => {
+    const newContributions = contributions.map(contribution => {
+      if (contribution.id === id) {
+        if (token) {
+          const tokenAmounts = contribution.tokenAmounts.map(ta => ta.token === token ? { ...ta, amount: value } : ta);
+          return { ...contribution, tokenAmounts };
+        }
+        return { ...contribution, [field]: value };
+      }
+      return contribution;
+    });
     setContributions(newContributions);
   };
 
   const addContribution = () => {
-    setContributions([...contributions, { name: '', labels: '', date: new Date().toISOString().split('T')[0], contributors: [{ walletAddress: '', role: '', amount: '' }] }]);
+    setContributions([...contributions, { id: getNextId(), name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', role: '', tokenAmounts: tokens.map(token => ({ token, amount: '' })) }]);
   };
 
-  const removeContributor = (contributionIndex: number, contributorIndex: number) => {
-    const newContributions = [...contributions];
-    newContributions[contributionIndex].contributors = newContributions[contributionIndex].contributors.filter((_, index) => index !== contributorIndex);
-    setContributions(newContributions);
+  const removeContribution = (id: any) => {
+    setContributions(contributions.filter(contribution => contribution.id !== id));
   };
-  
-  const removeContribution = (index: number) => {
-    setContributions(contributions.filter((_, contributionIndex) => contributionIndex !== index));
-  };  
+
+  // Preparing contributions for submission by grouping them based on name, labels, and date
+  const prepareForSubmission = () => {
+    const grouped = contributions.reduce((acc: any, current: any) => {
+      const { name, labels, date, walletAddress, role, tokenAmounts } = current;
+      const key = `${name}-${labels}-${date}`;
+      if (!acc[key]) {
+        acc[key] = { name, labels, date, contributors: [] };
+      }
+      acc[key].contributors.push({ walletAddress, role, tokens: tokenAmounts });
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  };
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    onSubmit(contributions);
+    const preparedContributions = prepareForSubmission();
+    onSubmit(preparedContributions);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {contributions.map((contribution, index) => (
-        <div key={index}>
-          <input
-            type="text"
-            placeholder="Name of Contribution"
-            value={contribution.name}
-            onChange={(e) => handleChange(index, 'name', e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Labels (comma-separated)"
-            value={contribution.labels}
-            onChange={(e) => handleChange(index, 'labels', e.target.value)}
-          />
-          <input
-            type="date"
-            value={contribution.date}
-            onChange={(e) => handleChange(index, 'date', e.target.value)}
-          />
-          {contribution.contributors.map((contributor, cIndex) => (
-            <div key={cIndex}>
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <table className={styles.table}>
+  <thead>
+    <tr>
+      <th>Name of Contribution</th>
+      <th>Labels (comma-separated)</th>
+      <th>Date</th>
+      <th>Wallet Address</th>
+      <th>Role</th>
+      {tokens.map((token) => (
+        <th key={token}>{token}</th>
+      ))}
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {contributions.map((contribution, index, arr) => {
+      const isSameGroupAsPrevious = index > 0 && contribution.name === arr[index - 1].name && contribution.labels === arr[index - 1].labels && contribution.date === arr[index - 1].date;
+      return (
+        <tr key={contribution.id}>
+          <td>
+            <input
+              type="text"
+              value={contribution.name}
+              onChange={(e) => handleChange(contribution.id, 'name', e.target.value)}
+              className={styles.input}
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={contribution.labels}
+              onChange={(e) => handleChange(contribution.id, 'labels', e.target.value)}
+              className={styles.input}
+            />
+          </td>
+          <td>
+            <input
+              type="date"
+              value={contribution.date}
+              onChange={(e) => handleChange(contribution.id, 'date', e.target.value)}
+              className={styles.input}
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={contribution.walletAddress}
+              onChange={(e) => handleChange(contribution.id, 'walletAddress', e.target.value)}
+              className={styles.input}
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={contribution.role}
+              onChange={(e) => handleChange(contribution.id, 'role', e.target.value)}
+              className={styles.input}
+            />
+          </td>
+          {tokens.map((token: any) => (
+            <td key={token}>
               <input
                 type="text"
-                placeholder="Wallet Address"
-                value={contributor.walletAddress}
-                onChange={(e) => handleChange(index, `${cIndex}.walletAddress`, e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Role"
-                value={contributor.role}
-                onChange={(e) => handleChange(index, `${cIndex}.role`, e.target.value)}
-              />
-              <input
-                type="text"
+                value={contribution.tokenAmounts.find(ta => ta.token === token)?.amount || ''}
+                onChange={(e) => handleChange(contribution.id, 'amount', e.target.value, token)}
+                className={styles.input}
                 placeholder="Amount"
-                value={contributor.amount}
-                onChange={(e) => handleChange(index, `${cIndex}.amount`, e.target.value)}
               />
-            <button type="button" onClick={() => removeContributor(index, cIndex)}>Remove Contributor</button>
-          </div>
-        ))}
-        <button type="button" onClick={() => addContributor(index)}>Add Contributor</button>
-        <button type="button" onClick={() => removeContribution(index)}>Remove Contribution</button>
-      </div>
-    ))}
-    <button type="button" onClick={addContribution}>Add Contribution</button>
-    <button type="submit">Submit Contributions</button>
-  </form>
-);
+            </td>
+          ))}
+          <td>
+            <button type="button" onClick={() => removeContribution(contribution.id)} className={styles.button}>
+              Remove
+            </button>
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+<button type="button" onClick={addContribution} className={styles.button}>
+  Add New Contribution
+</button>
+<button type="submit" className={styles.button}>Submit Contributions</button>
+
+    </form>
+  );
 }
 
 export default ContributionForm;

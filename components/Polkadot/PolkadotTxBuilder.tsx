@@ -1,8 +1,8 @@
 // components/PolkadotTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import ContributionForm from './ContributionForm';
-import { useTxData } from '../context/TxDataContext';
+import ContributionForm from '../ContributionForm';
+import { useTxData } from '../../context/TxDataContext';
 
 export default function PolkadotTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
@@ -41,6 +41,7 @@ export default function PolkadotTxBuilder() {
   }, [txData.wallet]);
 
   const handleContributionSubmit = async (contributions: any) => {
+    console.log('Submitting contributions:', contributions);
     // Check if the web3 extension is enabled and the accounts are accessible
     if (typeof window === 'undefined') return null;
     const { web3Enable, web3FromAddress } = await import('@polkadot/extension-dapp');
@@ -65,7 +66,8 @@ export default function PolkadotTxBuilder() {
       // Generate batch calls for each contribution
       const batchCalls = contributions.flatMap((contribution: any) => {
         return contribution.contributors.flatMap((contributor: any) => {
-          const finalAmount = BigInt(contributor.amount) * BigInt(10 ** decimals);
+          let amount = contributor.tokens[0].amount;
+          const finalAmount = BigInt(amount) * BigInt(10 ** decimals);
           const transferCall = api.tx.balances.transferAllowDeath(contributor.walletAddress, finalAmount);
           const contributorId = contributor.walletAddress.slice(-6);
   
@@ -74,7 +76,7 @@ export default function PolkadotTxBuilder() {
             Role: contributor.role.split(',').map((label: any) => label.trim()),
             Labels: contribution.labels.split(',').map((label: any) => label.trim()),
             Date: contribution.date,
-            Amount: contributor.amount.toString(),
+            Amount: amount.toString(),
             ContributorId: contributorId 
           };
   
@@ -102,11 +104,10 @@ export default function PolkadotTxBuilder() {
       alert('An error occurred. Please check the console for more details.');
     }
   };  
-
+  let tokens = ["Native", "KSM"]
   return (
     <>
-      <ContributionForm onSubmit={handleContributionSubmit} />
-
+      <ContributionForm onSubmit={handleContributionSubmit} tokens={tokens} />
     </>
   );
 };

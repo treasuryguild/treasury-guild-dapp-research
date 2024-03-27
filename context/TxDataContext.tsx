@@ -25,6 +25,7 @@ interface TxData {
   budget_month: string;
   send_message: boolean;
   provider: string;
+  tokens: { symbol: string, balance: string }[];
   // other properties of TxData...
 }
 
@@ -65,6 +66,7 @@ export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
   budget_month: new Date().toISOString().slice(0, 7),
   send_message:true,
   provider: '',
+  tokens: [],
    /* initialize other properties as needed */ 
   });
 

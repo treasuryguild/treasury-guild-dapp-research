@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import styles from '../styles/ContributionForm.module.css';
 
-function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: string[] }) {
+function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbol: string, balance: string }[] }) {
   const [contributions, setContributions] = useState([
-    { id: 1, name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', role: '', tokenAmounts: tokens.map(token => ({ token, amount: '' })) }
+    { id: 1, name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', role: '', tokenAmounts: tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: '' })) }
   ]);
 
   // Unique ID for new contributions
@@ -14,8 +14,10 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: string[
     const newContributions = contributions.map(contribution => {
       if (contribution.id === id) {
         if (token) {
-          const tokenAmounts = contribution.tokenAmounts.map(ta => ta.token === token ? { ...ta, amount: value } : ta);
-          return { ...contribution, tokenAmounts };
+          const updatedTokenAmounts = contribution.tokenAmounts.length > 0
+            ? contribution.tokenAmounts.map(ta => ta.token === token ? { ...ta, amount: value } : ta)
+            : tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: tokenObj.symbol === token ? value : '' }));
+          return { ...contribution, tokenAmounts: updatedTokenAmounts };
         }
         return { ...contribution, [field]: value };
       }
@@ -25,7 +27,7 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: string[
   };
 
   const addContribution = () => {
-    setContributions([...contributions, { id: getNextId(), name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', role: '', tokenAmounts: tokens.map(token => ({ token, amount: '' })) }]);
+    setContributions([...contributions, { id: getNextId(), name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', role: '', tokenAmounts: tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: '' })) }]);
   };
 
   const removeContribution = (id: any) => {
@@ -64,7 +66,7 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: string[
       <th>Wallet Address</th>
       <th>Role</th>
       {tokens.map((token) => (
-        <th key={token}>{token}</th>
+        <th key={token.symbol}>{token.symbol}</th>
       ))}
       <th>Actions</th>
     </tr>
@@ -115,11 +117,11 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: string[
             />
           </td>
           {tokens.map((token: any) => (
-            <td key={token}>
+            <td key={token.symbol}>
               <input
                 type="text"
-                value={contribution.tokenAmounts.find(ta => ta.token === token)?.amount || ''}
-                onChange={(e) => handleChange(contribution.id, 'amount', e.target.value, token)}
+                value={contribution.tokenAmounts.find(ta => ta.token === token.symbol)?.amount || ''}
+                onChange={(e) => handleChange(contribution.id, 'amount', e.target.value, token.symbol)}
                 className={styles.input}
                 placeholder="Amount"
               />

@@ -20,6 +20,7 @@ const PolkadotWalletConnect: React.FC = () => {
   const [balance, setBalance] = useState('');
   const [loading, setLoading] = useState(false);
   const [tokenDecimals, setTokenDecimals] = useState(0);
+  const [tokens, setTokens] = useState([]);
 
   const setup = async () => {
     setLoading(true);
@@ -31,6 +32,35 @@ const PolkadotWalletConnect: React.FC = () => {
     console.log(api, selectedProvider )
     setLoading(false);
   };
+
+  const fetchTokenBalances = async (accountAddress: any) => {
+  try {
+    if (!api) return [];
+
+    // Get the available token balances for the account
+    const tokenBalances = await api.derive.balances.all(accountAddress);
+
+    // Extract the token symbols and balances
+    const tokens = Object.entries(tokenBalances.lockedBreakdown).map(([symbol, balance]) => ({
+      symbol,
+      balance: balance.toString(),
+    }));
+
+    // Add the native token balance
+    const { data: { free: nativeBalance } }: any = await api.query.system.account(accountAddress);
+    const nativeToken = {
+      symbol: api.registry.chainTokens[0], // Get the native token symbol
+      balance: nativeBalance.toString(),
+    };
+    tokens.unshift(nativeToken); // Add the native token at the beginning of the list
+
+    console.log('All Tokens:', tokens, tokenBalances);
+    return tokens;
+  } catch (error) {
+    console.error('Error fetching token balances:', error);
+    return [];
+  }
+};
 
   useEffect(() => { 
     setup();
@@ -93,16 +123,35 @@ const PolkadotWalletConnect: React.FC = () => {
             return;
         }
 
-        const { data: { free: balance } } = await (api.query.system.account(txData.wallet) as any);
-        const balanceInPlanck = balance.toBigInt();
-        const balanceInDOT = balanceInPlanck ;
-        const finalBalance = Number(balanceInDOT) / (10 ** (tokenDecimals));
-        setBalance((finalBalance).toFixed(4));
-        console.log('Balance:', finalBalance);
+        api.query.system.account(
+          txData.wallet, 
+          ({ data: { free: balance } }: {data: {free: any}}) => {
+            const balanceInPlanck = balance.toBigInt();
+            const balanceInDOT = balanceInPlanck ;
+            const finalBalance = Number(balanceInDOT) / (10 ** (tokenDecimals));
+            setBalance((finalBalance).toFixed(4));
+            console.log('Balance:', finalBalance);
+          })
+        //const { data: { free: balance } } = await (api.query.system.account(txData.wallet) as any);
     };
 
     fetchBalance();
 }, [api, txData.wallet]);
+
+useEffect(() => {
+  const fetchAndSetTokens = async () => {
+    if (selectedAccount && api) {
+      const fetchedTokens: any = await fetchTokenBalances(selectedAccount);
+      setTokens(fetchedTokens);
+    }
+  };
+
+  fetchAndSetTokens();
+}, [selectedAccount, api]);
+
+useEffect(() => {
+  setTxData({ ...txData, tokens });
+}, [tokens]);
 
   const connectPolkadotWallet = async () => {
     setStatus('Connecting...');

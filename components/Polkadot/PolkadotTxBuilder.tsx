@@ -8,7 +8,8 @@ export default function PolkadotTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
   const [wsProvider, setWsProvider] = useState('wss://ws.test.azero.dev');
   const { txData, setTxData } = useTxData();
-  
+  const { tokens } = txData;
+  //console.log('Tokens:', tokens);
   useEffect(() => {
     // Update the provider when it changes
     const updateProvider = async () => {
@@ -104,7 +105,7 @@ export default function PolkadotTxBuilder() {
       alert('An error occurred. Please check the console for more details.');
     }
   };  
-  let tokens = ["Native", "KSM"]
+  //let tokens = ["Native", "KSM"]
   return (
     <>
       <ContributionForm onSubmit={handleContributionSubmit} tokens={tokens} />

@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
 import { useTxData } from '../../context/TxDataContext';
+import ProjectDetailsForm from '../../components/ProjectDetailsForm';
 
 const providers = [
   { name: 'Aleph Zero Testnet', url: 'wss://ws.test.azero.dev' },
-  { name: 'Polkadot Mainnet', url: 'wss://rpc.polkadot.io' },
+  { name: 'Polkadot', url: 'wss://rpc.polkadot.io' },
   // Add more providers as needed
 ];
 
@@ -21,6 +22,7 @@ const PolkadotWalletConnect: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [tokenDecimals, setTokenDecimals] = useState(0);
   const [tokens, setTokens] = useState([]);
+  const [walletExists, setWalletExists] = useState(false);
 
   const setup = async () => {
     setLoading(true);
@@ -39,20 +41,31 @@ const PolkadotWalletConnect: React.FC = () => {
 
     // Get the available token balances for the account
     const tokenBalances = await api.derive.balances.all(accountAddress);
-
+    console.log('Token Balances:', tokenBalances);
     // Extract the token symbols and balances
     const tokens = Object.entries(tokenBalances.lockedBreakdown).map(([symbol, balance]) => ({
       symbol,
       balance: balance.toString(),
+      name: symbol,
+      decimals: 0,
+      contractAddress: '',
+      policy_id: '',
+      blockchain: 'Polkadot',
     }));
 
     // Add the native token balance
     const { data: { free: nativeBalance } }: any = await api.query.system.account(accountAddress);
+    const selectedProviderName = providers.find((provider) => provider.url === selectedProvider)?.name || '';
     const nativeToken = {
       symbol: api.registry.chainTokens[0], // Get the native token symbol
       balance: nativeBalance.toString(),
+      name: selectedProviderName,
+      decimals: api.registry.chainDecimals[0],
+      contractAddress: '', 
+      policy_id: '',
+      blockchain: 'Polkadot',
     };
-    tokens.unshift(nativeToken); // Add the native token at the beginning of the list
+    tokens.unshift(nativeToken);  // Add the native token at the beginning of the list
 
     console.log('All Tokens:', tokens, tokenBalances);
     return tokens;
@@ -205,6 +218,9 @@ useEffect(() => {
       <p>Status: {status}</p>
       {accounts.length > 0 && (
         <div>
+          {selectedAccount && (
+            <ProjectDetailsForm walletAddress={selectedAccount} blockchain="Polkadot" />
+          )}
           <h4>Balance</h4>
           <div>
             <p>Account Address: {selectedAccount}</p>

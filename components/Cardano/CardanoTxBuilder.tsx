@@ -11,7 +11,23 @@ export default function CardanoTxBuilder() {
     console.log('Submitting contributions:', contributions);
   };  
 
-  let tokens = ["ADA", "AGIX"]
+  let tokens = [
+    { symbol: "ADA", 
+      balance:"",
+      name: "Lovelace",
+      decimals: 0,
+      contractAddress: '',
+      policy_id: '',
+      blockchain: 'Cardano',
+    }, {
+      symbol: "AGIX", 
+      balance: "",
+      name: "SingularityNET",
+      decimals: 0,
+      contractAddress: '',
+      policy_id: '',
+      blockchain: 'Cardano',
+    }]
   return (
     <>
       <ContributionForm onSubmit={handleContributionSubmit} tokens={tokens}/>

@@ -4,12 +4,53 @@ import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
 import { useTxData } from '../../context/TxDataContext';
 import ProjectDetailsForm from '../../components/ProjectDetailsForm';
+import { supabaseAnon } from '../../lib/supabaseClient';
 
 const providers = [
   { name: 'Aleph Zero Testnet', url: 'wss://ws.test.azero.dev' },
   { name: 'Polkadot', url: 'wss://rpc.polkadot.io' },
   // Add more providers as needed
 ];
+
+const updateTokensTable = async (tokens: any[]) => {
+  try {
+    for (const token of tokens) {
+      const { data: existingTokens, error: tokenError } = await supabaseAnon
+        .from('tokens')
+        .select('*')
+        .eq('symbol', token.symbol)
+        .eq('blockchain', 'Polkadot');
+
+      if (tokenError) {
+        console.error('Error checking token existence:', tokenError);
+      } else if (existingTokens.length === 0) {
+        // Token doesn't exist, insert it into the table
+        const { data: newToken, error: insertError } = await supabaseAnon
+          .from('tokens')
+          .insert([
+            {
+              symbol: token.symbol,
+              name: token.name,
+              decimals: token.decimals,
+              contract_address: token.contractAddress,
+              policy_id: token.policy_id,
+              blockchain: 'Polkadot',
+            },
+          ]);
+
+        if (insertError) {
+          console.error('Error inserting new token:', insertError);
+        } else {
+          console.log('New token inserted:', newToken);
+        }
+      } else {
+        console.log('Token already exists:', existingTokens);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating tokens table:', error);
+  }
+};
 
 const PolkadotWalletConnect: React.FC = () => {
   const [accounts, setAccounts] = useState<InjectedAccountWithMeta[]>([]);
@@ -156,6 +197,7 @@ useEffect(() => {
     if (selectedAccount && api) {
       const fetchedTokens: any = await fetchTokenBalances(selectedAccount);
       setTokens(fetchedTokens);
+      await updateTokensTable(fetchedTokens); // Update the tokens table
     }
   };
 

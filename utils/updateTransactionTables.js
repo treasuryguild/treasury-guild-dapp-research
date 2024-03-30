@@ -18,7 +18,7 @@ async function getOrCreateToken(token) {
           contract_address: token.contractAddress
         }
       ])
-      .select('id');
+      .select('*');
 
     if (newTokenError) {
       console.error('Error inserting new token:', newTokenError);
@@ -121,7 +121,7 @@ export default async function updateTransactionTables(jsonData) {
         contribution_id: contributionId,
         from_address: input.fromAddress,
         token_id: tokenId,
-        amount: input.token.amount
+        amount: contribution.amount
       };
     });
 
@@ -173,7 +173,7 @@ export default async function updateTransactionTables(jsonData) {
         role: output.role,
         to_address: output.toAddress,
         token_id: tokenId,
-        amount: output.token.amount,
+        amount: contribution.amount,
         wallet_id: walletId,
         external_wallet_id: externalWalletId
       };

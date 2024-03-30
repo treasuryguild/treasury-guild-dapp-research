@@ -1,17 +1,13 @@
 // .netlify/functions/processTransaction.js
-import { createClient } from '@supabase/supabase-js';
 import updateTransactionTables from './updateTransactionTables';
-
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_KEY';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabaseAdmin } from '../lib/supabaseClient';
 
 export async function handler(event, context) {
   const { record } = JSON.parse(event.body);
 
   try {
     await updateTransactionTables(record);
-    await supabase
+    await supabaseAdmin
       .from('pending_transactions')
       .update({ processed: true })
       .eq('id', record.id);

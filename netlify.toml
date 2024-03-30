@@ -2,8 +2,11 @@
 
 [build]
   command = "npm run build"
-  functions = "functions"
-  publish = "out"
+  functions = "netlify/functions"
+  publish = "build"
+
+[functions]
+  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"

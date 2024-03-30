@@ -4,6 +4,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import ContributionForm from '../ContributionForm';
 import { useTxData } from '../../context/TxDataContext';
 import updateTransactionTables from '../../utils/updateTransactionTables';
+import { supabaseAnon } from '../../lib/supabaseClient';
 
 export default function PolkadotTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
@@ -157,8 +158,17 @@ export default function PolkadotTxBuilder() {
 
         if (status.isFinalized) {
           console.log('Final JSON data:', jsonData);
-          // Update the Supabase tables with the transaction data
-          await updateTransactionTables(jsonData);
+          // Insert the jsonData into the pending_transactions table
+          const { data, error } = await supabaseAnon
+            .from('pending_transactions')
+            .insert([{json_data: jsonData}]);
+        
+          if (error) {
+            console.error('Error inserting pending transaction:', error);
+          } else {
+            console.log('Pending transaction inserted successfully');
+          }
+        
           unsub();
         }
       });

@@ -1,6 +1,7 @@
 // components/PolkadotWalletConnect.tsx
 import React, { useState, useEffect } from 'react';
 import { useTxData } from '../../context/TxDataContext';
+import ProjectDetailsForm from '../../components/ProjectDetailsForm';
 
 const CardanoWalletConnect: React.FC = () => {
   const { txData, setTxData } = useTxData();

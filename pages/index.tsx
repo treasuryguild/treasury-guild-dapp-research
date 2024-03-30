@@ -17,7 +17,7 @@ const Home: NextPage = () => {
         <div>
             <h1 className={styles.title}>Welcome to the Treasury Guild</h1>
             <p className={styles.description}>
-                The Treasury Guild is a place where you can manage your project's budget and transactions.
+                {`The Treasury Guild is a place where you can manage your project's budget and transactions.`}
             </p>
             <div className={styles.grid}>
                 <Link href="/txbuilder" className={styles.card}>              
@@ -30,7 +30,7 @@ const Home: NextPage = () => {
                 </Link>
                 <Link href="/wallet" className={styles.card}>               
                     <h2>View Wallet &rarr;</h2>
-                    <p>View your project's wallet balance</p>
+                    <p>{`View your project's wallet balance`}</p>
                 </Link>
             </div>
         </div>

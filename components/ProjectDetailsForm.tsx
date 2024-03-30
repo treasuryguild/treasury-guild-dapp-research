@@ -9,6 +9,15 @@ import {
 } from '../utils/supabaseUtils';
 import { useTxData } from '../context/TxDataContext';
 
+interface Project {
+  id: string;
+  name: string;
+  groups: {
+    id: string;
+    name: string;
+  };
+}
+
 const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }> = ({
   walletAddress,
   blockchain,
@@ -16,7 +25,7 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
   const [groupName, setGroupName] = useState('');
   const [projectName, setProjectName] = useState('');
   const [loading, setLoading] = useState(true);
-  const [project, setProject] = useState(null);
+  const [project, setProject] = useState<Project | null>(null);
   const { txData, setTxData } = useTxData();
 
   useEffect(() => {
@@ -72,8 +81,8 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
     return (
       <div>
         <h3>Project Details</h3>
-        <p>Group Name: {project.groups.name}</p>
-        <p>Project Name: {project.name}</p>
+        <p>Group Name: {project?.groups?.name}</p>
+        <p>Project Name: {project?.name}</p>
       </div>
     );
   }

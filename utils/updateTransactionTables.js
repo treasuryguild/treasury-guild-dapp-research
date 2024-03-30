@@ -31,8 +31,8 @@ async function getOrCreateToken(token) {
   return tokenData.id;
 }
 
-export default async function updateTransactionTables(transaction_data) {
-  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions } = transaction_data;
+export default async function updateTransactionTables(jsonData) {
+  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions } = jsonData;
 
   // Check if the fromAddress exists in the Wallets or ExternalWallets table
   let fromWalletId = '';

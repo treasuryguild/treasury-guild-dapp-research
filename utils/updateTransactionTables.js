@@ -121,7 +121,7 @@ export default async function updateTransactionTables(jsonData) {
         contribution_id: contributionId,
         from_address: input.fromAddress,
         token_id: tokenId,
-        amount: contribution.amount
+        amount: input.amount
       };
     });
 
@@ -173,7 +173,7 @@ export default async function updateTransactionTables(jsonData) {
         role: output.role,
         to_address: output.toAddress,
         token_id: tokenId,
-        amount: contribution.amount,
+        amount: output.amount,
         wallet_id: walletId,
         external_wallet_id: externalWalletId
       };

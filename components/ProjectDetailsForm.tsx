@@ -6,7 +6,7 @@ import {
   createGroup,
   createProject,
   addWalletToProject,
-} from '../utils/supabaseUtils';
+} from '../utils/polkaWalletReg';
 import { useTxData } from '../context/TxDataContext';
 
 interface Project {

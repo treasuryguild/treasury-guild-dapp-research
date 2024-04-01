@@ -1,8 +1,8 @@
 // utils/supabaseUtils.js
-import { supabaseAdmin } from '../lib/supabaseClient';
+import { supabaseAnon } from '../lib/supabaseClient';
 
 export const checkWalletExists = async (walletAddress, blockchain) => {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabaseAnon
     .from('wallets')
     .select('*')
     .eq('address', walletAddress)
@@ -18,7 +18,7 @@ export const checkWalletExists = async (walletAddress, blockchain) => {
 };
 
 export const getProjectByWallet = async (walletAddress, blockchain) => {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabaseAnon
     .from('wallets')
     .select('project_id')
     .eq('address', walletAddress)
@@ -34,7 +34,7 @@ export const getProjectByWallet = async (walletAddress, blockchain) => {
     return null;
   }
 
-  const { data: projectData, error: projectError } = await supabaseAdmin
+  const { data: projectData, error: projectError } = await supabaseAnon
     .from('projects')
     .select('*, groups(*)')
     .eq('id', data.project_id)
@@ -49,7 +49,7 @@ export const getProjectByWallet = async (walletAddress, blockchain) => {
 };
 
 export const createGroup = async (groupName) => {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabaseAnon
     .from('groups')
     .insert({ name: groupName })
     .single()
@@ -64,7 +64,7 @@ export const createGroup = async (groupName) => {
 };
 
 export const createProject = async (groupId, projectName) => {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabaseAnon
     .from('projects')
     .insert({ group_id: groupId, name: projectName })
     .single()
@@ -79,7 +79,7 @@ export const createProject = async (groupId, projectName) => {
 };
 
 export const addWalletToProject = async (projectId, walletAddress, blockchain) => {
-  const { data, error } = await supabaseAdmin.from('wallets').insert({
+  const { data, error } = await supabaseAnon.from('wallets').insert({
     project_id: projectId,
     address: walletAddress,
     blockchain: blockchain,

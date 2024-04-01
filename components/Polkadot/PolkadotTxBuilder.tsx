@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import ContributionForm from '../ContributionForm';
 import { useTxData } from '../../context/TxDataContext';
-import updateTransactionTables from '../../utils/updateTransactionTables';
 import { supabaseAnon } from '../../lib/supabaseClient';
+import { handleSingleTokenContribution } from '../../utils/singleTokenContribution';
+import { handleMultipleTokensContribution } from '../../utils/multipleTokensContribution';
+import updateTransactionTables from '../../utils/updateTransactionTables';
 
 export default function PolkadotTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
@@ -84,44 +86,35 @@ export default function PolkadotTxBuilder() {
       for (const contribution of contributions) {
         const contributionInputs: any[] = [];
         const contributionOutputs: any[] = [];
-
+    
         for (const contributor of contribution.contributors) {
-          let amount = contributor.tokens[0].amount;
-          const finalAmount = BigInt(amount) * BigInt(10 ** decimals);
-          const transferCall = api.tx.balances.transferAllowDeath(contributor.walletAddress, finalAmount);
-          const contributorId = contributor.walletAddress.slice(-6);
-          const tokenData = txData.tokens.find(token => token.symbol === contributor.tokens[0].token);
-          const remarkData = {
-            Contribution: contribution.name,
-            Role: contributor.role.split(',').map((label: any) => label.trim()),
-            Labels: contribution.labels.split(',').map((label: any) => label.trim()),
-            Date: contribution.date,
-            Tokens: [{ token: contributor.tokens[0], amount: amount.toString() }],
-            ContributorId: contributorId,
-          };
-
-          const remarkMessage = JSON.stringify(remarkData);
-          const remarkCall = api.tx.system.remark(remarkMessage);
-
-          batchCalls.push(transferCall);
-          batchCalls.push(remarkCall);
-
-          contributionInputs.push({
-            fromAddress: accountAddress,
-            token: tokenData,
-            amount: amount.toString()
-          });
-
-          contributionOutputs.push({
-            toAddress: contributor.walletAddress,
-            token: tokenData,
-            amount: amount.toString(),
-            role: contributor.role.split(',').map((label: any) => label.trim()),
-            walletId: null,
-            externalWalletId: null
-          });
+          if (contributor.tokens.length === 1) {
+            await handleSingleTokenContribution(
+              contribution,
+              contributionInputs,
+              contributionOutputs,
+              batchCalls,
+              jsonData,
+              decimals,
+              api,
+              accountAddress,
+              txData
+            );
+          } else {
+            await handleMultipleTokensContribution(
+              contribution,
+              contributionInputs,
+              contributionOutputs,
+              batchCalls,
+              jsonData,
+              decimals,
+              api,
+              accountAddress,
+              txData
+            );
+          }
         }
-
+    
         jsonData.contributions.push({
           name: contribution.name,
           labels: contribution.labels,
@@ -158,17 +151,29 @@ export default function PolkadotTxBuilder() {
 
         if (status.isFinalized) {
           console.log('Final JSON data:', jsonData);
-          // Insert the jsonData into the pending_transactions table
-          const { data, error } = await supabaseAnon
-            .from('pending_transactions')
-            .insert([{json_data: jsonData}]);
-        
-          if (error) {
-            console.error('Error inserting pending transaction:', error);
+  
+          // Check the value of the TESTING_MODE environment variable
+          if (process.env.NEXT_PUBLIC_TESTING_MODE == "true") {
+            // Testing mode: Run the updateTransactionTables function
+            try {
+              await updateTransactionTables(jsonData);
+              console.log('Transaction tables updated successfully');
+            } catch (error) {
+              console.error('Error updating transaction tables:', error);
+            }
           } else {
-            console.log('Pending transaction inserted successfully');
+            // Production mode: Insert the jsonData into the pending_transactions table
+            const { data, error } = await supabaseAnon
+              .from('pending_transactions')
+              .insert([{json_data: jsonData}]);
+  
+            if (error) {
+              console.error('Error inserting pending transaction:', error);
+            } else {
+              console.log('Pending transaction inserted successfully');
+            }
           }
-        
+  
           unsub();
         }
       });

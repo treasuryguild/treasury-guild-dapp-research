@@ -145,6 +145,7 @@ const PolkadotWalletConnect: React.FC = () => {
     const extensions = await web3Enable('Your App Name');
     if (extensions.length === 0) return null;
     const accounts = await web3Accounts();
+    console.log('Accounts:', accounts);
     return accounts.length > 0 ? accounts : null;
   };
 

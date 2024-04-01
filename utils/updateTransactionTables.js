@@ -1,14 +1,14 @@
-import { supabaseAdmin } from '../lib/supabaseClient';
+import { supabaseAnon } from '../lib/supabaseClient';
 
 async function getOrCreateToken(token) {
-  const { data: tokenData, error: tokenError } = await supabaseAdmin
+  const { data: tokenData, error: tokenError } = await supabaseAnon
     .from('tokens')
     .select('id')
     .eq('name', token.name)
     .single('id');
 
   if (tokenError) {
-    const { data: newTokenData, error: newTokenError } = await supabaseAdmin
+    const { data: newTokenData, error: newTokenError } = await supabaseAnon
       .from('tokens')
       .insert([
         {
@@ -31,176 +31,174 @@ async function getOrCreateToken(token) {
   return tokenData.id;
 }
 
-export default async function updateTransactionTables(jsonData) {
-  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions } = jsonData;
-
-  // Check if the fromAddress exists in the Wallets or ExternalWallets table
-  let fromWalletId = '';
-  let fromExternalWalletId = null;
-
-  const { data: fromWalletData, error: fromWalletError } = await supabaseAdmin
+async function getWalletId(address) {
+  const { data: walletData, error: walletError } = await supabaseAnon
     .from('wallets')
     .select('id')
-    .eq('address', fromAddress)
+    .eq('address', address)
     .single();
 
-  if (fromWalletError) {
-    const { data: fromExternalWalletData, error: fromExternalWalletError } = await supabaseAdmin
-      .from('external_wallets')
-      .select('id')
-      .eq('address', fromAddress)
-      .single();
-
-    if (fromExternalWalletError) {
-      // If the fromAddress doesn't exist in either table, insert it into the ExternalWallets table
-      const { data: newExternalWalletData, error: newExternalWalletError } = await supabaseAdmin
-        .from('external_wallets')
-        .insert([{ address: fromAddress }])
-        .select('id');
-
-      if (newExternalWalletError) {
-        console.error('Error inserting new external fromAddress wallet:', newExternalWalletError);
-        return;
-      }
-
-      fromExternalWalletId = newExternalWalletData[0].id;
-    } else {
-      fromExternalWalletId = fromExternalWalletData.id;
-    }
-  } else {
-    fromWalletId = fromWalletData.id;
+  if (walletError) {
+    return null;
   }
 
-  // Insert the transaction into the transactions table
-  const { data: transactionData, error: transactionError } = await supabaseAdmin
+  return walletData.id;
+}
+
+async function getOrCreateExternalWalletId(address) {
+  const { data: externalWalletData, error: externalWalletError } = await supabaseAnon
+    .from('external_wallets')
+    .select('id')
+    .eq('address', address)
+    .single();
+
+  if (externalWalletError) {
+    const { data: newExternalWalletData, error: newExternalWalletError } = await supabaseAnon
+      .from('external_wallets')
+      .insert([{ address }])
+      .select('id');
+
+    if (newExternalWalletError) {
+      console.error('Error inserting new external wallet:', newExternalWalletError);
+      throw newExternalWalletError;
+    }
+
+    return newExternalWalletData[0].id;
+  }
+
+  return externalWalletData.id;
+}
+
+async function insertTransaction(transaction) {
+  const { data: transactionData, error: transactionError } = await supabaseAnon
     .from('transactions')
-    .insert([
-      {
-        hash: transactionHash,
-        block_number: blockNumber,
-        from_address: fromAddress,
-        to_address: toAddress,
-        success: success,
-        project_id: project_id,
-        fee: fee
-      }
-    ])
+    .insert([transaction])
     .select('id');
 
   if (transactionError) {
     console.error('Error inserting transaction:', transactionError);
-    return;
+    throw transactionError;
   }
 
-  const transactionId = transactionData[0].id;
+  return transactionData[0].id;
+}
 
-  for (const contribution of contributions) {
-    const { data: contributionData, error: contributionError } = await supabaseAdmin
-      .from('contributions')
-      .insert([
-        {
-          name: contribution.name,
-          labels: contribution.labels,
-          task_date: contribution.taskDate
-        }
-      ])
-      .select('id');
+async function insertContributions(contributions) {
+  const contributionData = contributions.map(contribution => ({
+    name: contribution.name,
+    labels: contribution.labels,
+    task_date: contribution.taskDate
+  }));
 
-    if (contributionError) {
-      console.error('Error inserting contribution:', contributionError);
-      continue;
-    }
+  const { data: insertedContributions, error: contributionError } = await supabaseAnon
+    .from('contributions')
+    .insert(contributionData)
+    .select('id');
 
-    const contributionId = contributionData[0].id;
+  if (contributionError) {
+    console.error('Error inserting contributions:', contributionError);
+    throw contributionError;
+  }
 
-    const inputsPromises = contribution.inputs.map(async input => {
-      const tokenId = await getOrCreateToken(input.token);
+  return insertedContributions.map(contribution => contribution.id);
+}
 
-      return {
-        transaction_id: transactionId,
-        contribution_id: contributionId,
-        from_address: input.fromAddress,
-        token_id: tokenId,
-        amount: input.amount
-      };
-    });
+async function insertTransactionInputs(inputs, transactionId, contributionId) {
+  const flattenedInputData = await Promise.all(
+    inputs.flatMap(async input => {
+      return Promise.all(
+        input.tokens.map(async token => {
+          const tokenId = await getOrCreateToken(token.token);
+          return {
+            transaction_id: transactionId,
+            contribution_id: contributionId,
+            from_address: input.fromAddress,
+            token_id: tokenId,
+            amount: token.amount
+          };
+        })
+      );
+    })
+  );
 
-    const outputsPromises = contribution.outputs.map(async output => {
-      const tokenId = await getOrCreateToken(output.token);
-      let walletId = output.walletId;
-      let externalWalletId = output.externalWalletId;
+  const deepFlattenedInputData = flattenedInputData.flat();
 
-      // Check if the toAddress exists in the wallets or external_wallets tables
-      const { data: toWalletData, error: toWalletError } = await supabaseAdmin
-        .from('wallets')
-        .select('id')
-        .eq('address', output.toAddress)
-        .single();
+  console.log('Deep flattened input data:', deepFlattenedInputData);
 
-      if (toWalletError) {
-        const { data: toExternalWalletData, error: toExternalWalletError } = await supabaseAdmin
-          .from('external_wallets')
-          .select('id')
-          .eq('address', output.toAddress)
-          .single();
+  const { data: insertedInputs, error: inputsError } = await supabaseAnon
+    .from('transaction_inputs')
+    .insert(deepFlattenedInputData);
 
-        if (toExternalWalletError) {
-          // If the toAddress doesn't exist in either table, insert it into the external_wallets table
-          const { data: newExternalWalletData, error: newExternalWalletError } = await supabaseAdmin
-            .from('external_wallets')
-            .insert([{ address: output.toAddress }])
-            .select('id');
+  if (inputsError) {
+    console.error('Error inserting transaction inputs:', inputsError);
+    throw inputsError;
+  }
+}
 
-          if (newExternalWalletError) {
-            console.error('Error inserting new external toAddress wallet:', newExternalWalletError);
-            return;
-          }
+async function insertTransactionOutputs(outputs, transactionId, contributionId) {
+  const flattenedOutputData = await Promise.all(
+    outputs.flatMap(async output => {
+      const walletId = await getWalletId(output.toAddress);
+      const externalWalletId = walletId ? null : await getOrCreateExternalWalletId(output.toAddress);
 
-          externalWalletId = newExternalWalletData[0].id;
-          walletId = null;
-        } else {
-          externalWalletId = toExternalWalletData.id;
-          walletId = null;
-        }
-      } else {
-        walletId = toWalletData.id;
-        externalWalletId = null;
-      }
+      return Promise.all(
+        output.tokens.map(async token => {
+          const tokenId = await getOrCreateToken(token.token);
+          return {
+            transaction_id: transactionId,
+            contribution_id: contributionId,
+            role: output.role,
+            to_address: output.toAddress,
+            token_id: tokenId,
+            amount: token.amount,
+            wallet_id: walletId,
+            external_wallet_id: externalWalletId
+          };
+        })
+      );
+    })
+  );
 
-      return {
-        transaction_id: transactionId,
-        contribution_id: contributionId,
-        role: output.role,
-        to_address: output.toAddress,
-        token_id: tokenId,
-        amount: output.amount,
-        wallet_id: walletId,
-        external_wallet_id: externalWalletId
-      };
-    });
+  const deepFlattenedOutputData = flattenedOutputData.flat();
 
-    const [inputsData, outputsData] = await Promise.all([
-      Promise.all(inputsPromises),
-      Promise.all(outputsPromises)
-    ]);
+  console.log('Deep flattened output data:', deepFlattenedOutputData);
 
-    const { data: inputsInsertData, error: inputsInsertError } = await supabaseAdmin
-      .from('transaction_inputs')
-      .insert(inputsData);
+  const { data: insertedOutputs, error: outputsError } = await supabaseAnon
+    .from('transaction_outputs')
+    .insert(deepFlattenedOutputData);
 
-    if (inputsInsertError) {
-      console.error('Error inserting transaction inputs:', inputsInsertError);
-      continue;
-    }
+  if (outputsError) {
+    console.error('Error inserting transaction outputs:', outputsError);
+    throw outputsError;
+  }
+}
 
-    const { data: outputsInsertData, error: outputsInsertError } = await supabaseAdmin
-      .from('transaction_outputs')
-      .insert(outputsData);
+export default async function updateTransactionTables(jsonData) {
+  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions } = jsonData;
 
-    if (outputsInsertError) {
-      console.error('Error inserting transaction outputs:', outputsInsertError);
-      continue;
-    }
+  // Insert the transaction into the transactions table
+  const transaction = {
+    hash: transactionHash,
+    block_number: blockNumber,
+    from_address: fromAddress,
+    to_address: toAddress,
+    success: success,
+    project_id: project_id,
+    fee: fee
+  };
+
+  const transactionId = await insertTransaction(transaction);
+
+  // Insert the contributions and get their IDs
+  const contributionIds = await insertContributions(contributions);
+
+  // Insert the transaction inputs and outputs for each contribution
+  for (let i = 0; i < contributions.length; i++) {
+    const contribution = contributions[i];
+    const contributionId = contributionIds[i];
+
+    await insertTransactionInputs(contribution.inputs, transactionId, contributionId);
+    await insertTransactionOutputs(contribution.outputs, transactionId, contributionId);
   }
 
   console.log('Transaction tables updated successfully');

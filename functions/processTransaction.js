@@ -1,6 +1,6 @@
 // ../functions/processTransaction.js
 import updateTransactionTables from '../utils/updateTransactionTables';
-import { supabaseAdmin } from '../lib/supabaseClient';
+import { supabaseAnon } from '../lib/supabaseClient';
 
 export async function handler(event, context) {
   const contentType = event.headers['content-type'];
@@ -17,7 +17,7 @@ export async function handler(event, context) {
 
   try {
     await updateTransactionTables(jsonData);
-    await supabaseAdmin
+    await supabaseAnon
       .from('pending_transactions')
       .update({ processed: true })
       .eq('id', record.id);

@@ -1,78 +1,161 @@
+// updateTransactionTables.js
 import { supabaseAnon } from '../lib/supabaseClient';
 
-async function getOrCreateToken(token) {
-  const { data: tokenData, error: tokenError } = await supabaseAnon
+async function getOrCreateTokens(tokens) {
+  const tokenNames = tokens.map(token => token.name);
+  const { data: existingTokens, error: selectError } = await supabaseAnon
     .from('tokens')
-    .select('id')
-    .eq('name', token.name)
-    .single('id');
+    .select('id, name')
+    .in('name', tokenNames);
 
-  if (tokenError) {
-    const { data: newTokenData, error: newTokenError } = await supabaseAnon
+  if (selectError) {
+    console.error('Error selecting tokens:', selectError);
+    throw selectError;
+  }
+
+  const existingTokenMap = new Map(existingTokens.map(token => [token.name, token.id]));
+  const newTokens = tokens.filter(token => !existingTokenMap.has(token.name));
+
+  if (newTokens.length > 0) {
+    const { data: insertedTokens, error: insertError } = await supabaseAnon
       .from('tokens')
-      .insert([
-        {
-          symbol: token.symbol,
-          name: token.name,
-          decimals: token.decimals,
-          contract_address: token.contractAddress
-        }
-      ])
-      .select('*');
+      .insert(newTokens.map(token => ({
+        symbol: token.symbol,
+        name: token.name,
+        decimals: token.decimals,
+        contract_address: token.contractAddress
+      })))
+      .select('id, name');
 
-    if (newTokenError) {
-      console.error('Error inserting new token:', newTokenError);
-      throw newTokenError;
+    if (insertError) {
+      console.error('Error inserting new tokens:', insertError);
+      throw insertError;
     }
 
-    return newTokenData[0].id;
+    insertedTokens.forEach(token => existingTokenMap.set(token.name, token.id));
   }
 
-  return tokenData.id;
+  return existingTokenMap;
 }
 
-async function getWalletId(address) {
-  const { data: walletData, error: walletError } = await supabaseAnon
-    .from('wallets')
-    .select('id')
-    .eq('address', address)
-    .single();
-
-  if (walletError) {
-    return null;
-  }
-
-  return walletData.id;
-}
-
-async function getOrCreateExternalWalletId(address) {
-  const { data: externalWalletData, error: externalWalletError } = await supabaseAnon
+async function getOrCreateExternalWallets(addresses) {
+  const { data: existingWallets, error: selectError } = await supabaseAnon
     .from('external_wallets')
-    .select('id')
-    .eq('address', address)
-    .single();
+    .select('id, address')
+    .in('address', addresses);
 
-  if (externalWalletError) {
-    const { data: newExternalWalletData, error: newExternalWalletError } = await supabaseAnon
-      .from('external_wallets')
-      .insert([{ address }])
-      .select('id');
-
-    if (newExternalWalletError) {
-      console.error('Error inserting new external wallet:', newExternalWalletError);
-      throw newExternalWalletError;
-    }
-
-    return newExternalWalletData[0].id;
+  if (selectError) {
+    console.error('Error selecting external wallets:', selectError);
+    throw selectError;
   }
 
-  return externalWalletData.id;
+  const existingWalletMap = new Map(existingWallets.map(wallet => [wallet.address, wallet.id]));
+  const newAddresses = addresses.filter(address => !existingWalletMap.has(address));
+
+  if (newAddresses.length > 0) {
+    const { data: insertedWallets, error: insertError } = await supabaseAnon
+      .from('external_wallets')
+      .insert(newAddresses.map(address => ({ address })))
+      .select('id, address');
+
+    if (insertError) {
+      console.error('Error inserting new external wallets:', insertError);
+      throw insertError;
+    }
+
+    insertedWallets.forEach(wallet => existingWalletMap.set(wallet.address, wallet.id));
+  }
+
+  return existingWalletMap;
 }
 
-async function insertTransaction(transaction) {
-  const { data: transactionData, error: transactionError } = await supabaseAnon
+async function insertTransactionData(transactionData, contributionIds, tokenMap, externalWalletMap) {
+  const inputData = [];
+  const outputData = [];
+
+  if (transactionData.contributions && transactionData.contributions.length > 0) {
+    transactionData.contributions.forEach((contribution, index) => {
+      const contributionId = contributionIds[index];
+
+      if (contribution.inputs) {
+        contribution.inputs.forEach(input => {
+          if (input.tokens) {
+            input.tokens.forEach(token => {
+              const tokenId = tokenMap.get(token.token.name);
+              inputData.push({
+                transaction_id: transactionData.id,
+                contribution_id: contributionId,
+                from_address: input.fromAddress,
+                token_id: tokenId,
+                amount: token.amount
+              });
+            });
+          }
+        });
+      }
+
+      if (contribution.outputs) {
+        contribution.outputs.forEach(output => {
+          const externalWalletId = externalWalletMap.get(output.toAddress);
+          if (output.tokens) {
+            output.tokens.forEach(token => {
+              const tokenId = tokenMap.get(token.token.name);
+              outputData.push({
+                transaction_id: transactionData.id,
+                contribution_id: contributionId,
+                role: output.role,
+                to_address: output.toAddress,
+                token_id: tokenId,
+                amount: token.amount,
+                external_wallet_id: externalWalletId
+              });
+            });
+          }
+        });
+      }
+    });
+  }
+
+  if (inputData.length > 0) {
+    const { error: inputsError } = await supabaseAnon
+      .from('transaction_inputs')
+      .insert(inputData);
+
+    if (inputsError) {
+      console.error('Error inserting transaction inputs:', inputsError);
+      throw inputsError;
+    }
+  }
+
+  if (outputData.length > 0) {
+    const { error: outputsError } = await supabaseAnon
+      .from('transaction_outputs')
+      .insert(outputData);
+
+    if (outputsError) {
+      console.error('Error inserting transaction outputs:', outputsError);
+      throw outputsError;
+    }
+  }
+}
+
+export default async function updateTransactionTables(jsonData) {
+  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions = [] } = jsonData;
+
+  const transactionData = {
+    hash: transactionHash,
+    block_number: blockNumber,
+    from_address: fromAddress,
+    to_address: toAddress,
+    success: success,
+    project_id: project_id,
+    fee: fee,
+    contributions: contributions
+  };
+
+  const { data: insertedTransaction, error: transactionError } = await supabaseAnon
     .from('transactions')
-    .insert([transaction])
+    .insert(transactionData)
     .select('id');
 
   if (transactionError) {
@@ -80,15 +163,15 @@ async function insertTransaction(transaction) {
     throw transactionError;
   }
 
-  return transactionData[0].id;
-}
+  transactionData.id = insertedTransaction[0].id;
 
-async function insertContributions(contributions) {
-  const contributionData = contributions.map(contribution => ({
-    name: contribution.name,
-    labels: contribution.labels,
-    task_date: contribution.taskDate
-  }));
+  if (contributions.length > 0) {
+    const contributionData = contributions.map(contribution => ({
+      transaction_id: transactionData.id,
+      name: contribution.name,
+      labels: contribution.labels,
+      task_date: contribution.taskDate
+    }));
 
   const { data: insertedContributions, error: contributionError } = await supabaseAnon
     .from('contributions')
@@ -100,106 +183,28 @@ async function insertContributions(contributions) {
     throw contributionError;
   }
 
-  return insertedContributions.map(contribution => contribution.id);
-}
+  const contributionIds = insertedContributions.map(contribution => contribution.id);
 
-async function insertTransactionInputs(inputs, transactionId, contributionId) {
-  const flattenedInputData = await Promise.all(
-    inputs.flatMap(async input => {
-      return Promise.all(
-        input.tokens.map(async token => {
-          const tokenId = await getOrCreateToken(token.token);
-          return {
-            transaction_id: transactionId,
-            contribution_id: contributionId,
-            from_address: input.fromAddress,
-            token_id: tokenId,
-            amount: token.amount
-          };
-        })
-      );
-    })
+  const allTokens = contributions.flatMap(contribution =>
+    contribution.inputs.flatMap(input =>
+      input.tokens.map(token => token.token)
+    ).concat(
+      contribution.outputs.flatMap(output =>
+        output.tokens.map(token => token.token)
+      )
+    )
   );
 
-  const deepFlattenedInputData = flattenedInputData.flat();
-
-  console.log('Deep flattened input data:', deepFlattenedInputData);
-
-  const { data: insertedInputs, error: inputsError } = await supabaseAnon
-    .from('transaction_inputs')
-    .insert(deepFlattenedInputData);
-
-  if (inputsError) {
-    console.error('Error inserting transaction inputs:', inputsError);
-    throw inputsError;
-  }
-}
-
-async function insertTransactionOutputs(outputs, transactionId, contributionId) {
-  const flattenedOutputData = await Promise.all(
-    outputs.flatMap(async output => {
-      const walletId = await getWalletId(output.toAddress);
-      const externalWalletId = walletId ? null : await getOrCreateExternalWalletId(output.toAddress);
-
-      return Promise.all(
-        output.tokens.map(async token => {
-          const tokenId = await getOrCreateToken(token.token);
-          return {
-            transaction_id: transactionId,
-            contribution_id: contributionId,
-            role: output.role,
-            to_address: output.toAddress,
-            token_id: tokenId,
-            amount: token.amount,
-            wallet_id: walletId,
-            external_wallet_id: externalWalletId
-          };
-        })
-      );
-    })
+  const allExternalAddresses = contributions.flatMap(contribution =>
+    contribution.outputs.map(output => output.toAddress)
   );
 
-  const deepFlattenedOutputData = flattenedOutputData.flat();
+  const [tokenMap, externalWalletMap] = await Promise.all([
+    getOrCreateTokens(allTokens),
+    getOrCreateExternalWallets(allExternalAddresses)
+  ]);
 
-  console.log('Deep flattened output data:', deepFlattenedOutputData);
-
-  const { data: insertedOutputs, error: outputsError } = await supabaseAnon
-    .from('transaction_outputs')
-    .insert(deepFlattenedOutputData);
-
-  if (outputsError) {
-    console.error('Error inserting transaction outputs:', outputsError);
-    throw outputsError;
+  await insertTransactionData(transactionData, contributionIds, tokenMap, externalWalletMap);
   }
-}
-
-export default async function updateTransactionTables(jsonData) {
-  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions } = jsonData;
-
-  // Insert the transaction into the transactions table
-  const transaction = {
-    hash: transactionHash,
-    block_number: blockNumber,
-    from_address: fromAddress,
-    to_address: toAddress,
-    success: success,
-    project_id: project_id,
-    fee: fee
-  };
-
-  const transactionId = await insertTransaction(transaction);
-
-  // Insert the contributions and get their IDs
-  const contributionIds = await insertContributions(contributions);
-
-  // Insert the transaction inputs and outputs for each contribution
-  for (let i = 0; i < contributions.length; i++) {
-    const contribution = contributions[i];
-    const contributionId = contributionIds[i];
-
-    await insertTransactionInputs(contribution.inputs, transactionId, contributionId);
-    await insertTransactionOutputs(contribution.outputs, transactionId, contributionId);
-  }
-
   console.log('Transaction tables updated successfully');
 }

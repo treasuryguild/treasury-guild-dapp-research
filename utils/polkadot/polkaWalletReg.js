@@ -1,5 +1,5 @@
 // utils/supabaseUtils.js
-import { supabaseAnon } from '../lib/supabaseClient';
+import { supabaseAnon } from '../../lib/supabaseClient';
 
 export const checkWalletExists = async (walletAddress, blockchain) => {
   const { data, error } = await supabaseAnon

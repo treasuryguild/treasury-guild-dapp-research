@@ -6,7 +6,7 @@ import {
   createGroup,
   createProject,
   addWalletToProject,
-} from '../utils/polkaWalletReg';
+} from '../utils/polkadot/polkaWalletReg';
 import { useTxData } from '../context/TxDataContext';
 
 interface Project {
@@ -29,14 +29,18 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
   const { txData, setTxData } = useTxData();
 
   useEffect(() => {
-    const fetchProject = async () => {
+    const fetchProject: any = async () => {
       setLoading(true);
       const walletExists = await checkWalletExists(walletAddress, blockchain);
       if (walletExists) {
         const projectData = await getProjectByWallet(walletAddress, blockchain);
-        console.log("Project Data:", projectData);
         setProject(projectData);
-        setTxData({ ...txData, project_id: projectData.id, wallet: walletAddress, project: projectData.name});
+        setTxData((prevTxData) => ({
+          ...prevTxData,
+          project_id: projectData.id,
+          wallet: walletAddress,
+          project: projectData.name,
+        }));
       } else {
         setProject(null);
         setGroupName('');
@@ -64,7 +68,12 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
       if (projectData) {
         await addWalletToProject(projectData.id, walletAddress, blockchain);
         setProject(projectData);
-        setTxData({ ...txData, project_id: projectData.id, wallet: walletAddress, project: projectData.name});
+        setTxData((prevTxData) => ({
+          ...prevTxData,
+          project_id: projectData.id,
+          wallet: walletAddress,
+          project: projectData.name,
+        }));
         setGroupName('');
         setProjectName('');
       }

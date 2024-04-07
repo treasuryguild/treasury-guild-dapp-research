@@ -18,7 +18,7 @@ export default function TxBuilder() {
     // Update the provider when it changes
     const updateProvider = async () => {
       const { provider } = txData;
-      console.log('Provider:', provider);
+      //console.log('Provider:', provider);
       if (!provider) {
         console.error('Provider not found in txData');
         return;

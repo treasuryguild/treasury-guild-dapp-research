@@ -4,21 +4,51 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import ContributionForm from '../ContributionForm';
 import { useTxData } from '../../context/TxDataContext';
 import { supabaseAnon } from '../../lib/supabaseClient';
-import { handleSingleTokenContribution } from '../../utils/singleTokenContribution';
-import { handleMultipleTokensContribution } from '../../utils/multipleTokensContribution';
+import { handleSingleTokenContribution } from '../../utils/polkadot/singleTokenContribution';
+import { handleMultipleTokensContribution } from '../../utils/polkadot/multipleTokensContribution';
 import updateTransactionTables from '../../utils/updateTransactionTables';
 
+const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
+
+interface Contribution {
+  name: string;
+  labels: string[];
+  date: string;
+  contributors: {
+    tokens: {
+      token: string;
+      amount: string;
+    }[];
+  }[];
+}
+
 export default function PolkadotTxBuilder() {
-  const [accountAddress, setAccountAddress] = useState('');
   const [wsProvider, setWsProvider] = useState('wss://ws.test.azero.dev');
   const { txData, setTxData } = useTxData();
-  const { tokens } = txData;
+  const [transactionStatus, setTransactionStatus] = useState('idle');
+
+  const checkWalletBalance = async (token: { token: string }, requiredAmount: number) => {
+    const tokenInfo = txData.tokens.find((t: any) => t.symbol === token.token);
+
+    if (tokenInfo) {
+      const { balance, decimals } = tokenInfo as { symbol: string; balance: string; decimals: number };
+      const availableBalance = Number(balance) / Math.pow(10, decimals);
+      console.log(`Available balance for token ${tokenInfo.symbol}:`, availableBalance);
+
+      if (availableBalance < requiredAmount) {
+        alert(`Insufficient balance for token ${tokenInfo.symbol}. Required: ${Number(requiredAmount)}, Available: ${availableBalance}`);
+        const errorMessage = `Insufficient balance for token ${tokenInfo.symbol}. Required: ${Number(requiredAmount)}, Available: ${availableBalance}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+    } else {
+      console.warn(`Token data not found for symbol: ${token.token}`);
+    }
+  };
 
   useEffect(() => {
-    // Update the provider when it changes
     const updateProvider = async () => {
       const { provider } = txData;
-      console.log('Provider:', provider);
       if (!provider) {
         console.error('Provider not found in txData');
         return;
@@ -27,39 +57,84 @@ export default function PolkadotTxBuilder() {
       setWsProvider(provider);
     };
     updateProvider();
-  }, [txData.provider]);
+  }, [txData]);
 
-  useEffect(() => {
-    // Initialize or update the account address based on the wallet info from txData
-    const initOrUpdateAccount = async () => {
-      if (typeof window === 'undefined') return null;
-      const { web3Enable, web3Accounts } = await import('@polkadot/extension-dapp');
-      const { wallet } = txData; // Destructuring to get the wallet address
-      await web3Enable('Your App Name');
-      const accounts = await web3Accounts();
-      // Check if the wallet address exists and is among the fetched accounts, then set it
-      if (wallet && accounts.some(acc => acc.address === wallet)) {
-        setAccountAddress(wallet);
-      }
+  const generateBatchCalls = async (
+    contributions: Contribution[],
+    api: ApiPromise,
+    decimals: number,
+    wallet: string
+  ) => {
+    const batchCalls: any[] = [];
+    let jsonData: any = {
+      transactionHash: '',
+      blockNumber: 0,
+      fromAddress: txData.wallet,
+      toAddress: '',
+      project_id: txData.project_id,
+      blockchain: 'Polkadot',
+      group: txData.group,
+      success: false,
+      fee: '0',
+      contributions: [],
     };
-    initOrUpdateAccount();
-  }, [txData.wallet]);
 
-  const handleContributionSubmit = async (contributions: any) => {
-    console.log('Submitting contributions:', contributions);
-    // Check if the web3 extension is enabled and the accounts are accessible
+    for (const contribution of contributions) {
+      const contributionInputs: any[] = [];
+      const contributionOutputs: any[] = [];
+
+      for (const contributor of contribution.contributors) {
+        if (contributor.tokens.length === 1) {
+          await handleSingleTokenContribution(
+            contribution,
+            contributionInputs,
+            contributionOutputs,
+            batchCalls,
+            jsonData,
+            decimals,
+            api,
+            wallet,
+            txData
+          );
+        } else {
+          await handleMultipleTokensContribution(
+            contribution,
+            contributionInputs,
+            contributionOutputs,
+            batchCalls,
+            jsonData,
+            decimals,
+            api,
+            wallet,
+            txData
+          );
+        }
+      }
+
+      jsonData.contributions.push({
+        name: contribution.name,
+        labels: contribution.labels,
+        taskDate: contribution.date,
+        inputs: contributionInputs,
+        outputs: contributionOutputs,
+      });
+    }
+
+    return { batchCalls, jsonData };
+  };
+
+  const handleContributionSubmit = async (contributions: Contribution[]) => {
     if (typeof window === 'undefined') return null;
     const { web3Enable, web3FromAddress } = await import('@polkadot/extension-dapp');
     await web3Enable('Your App Name');
-    const injector = await web3FromAddress(accountAddress);
+    const injector = await web3FromAddress(txData.wallet);
     if (!injector.signer) {
-      alert('Signer not found. Make sure a wallet extension is installed and the account is accessible.');
+      console.error('Signer not found. Make sure a wallet extension is installed and the account is accessible.');
       return;
     }
 
-    // Check if a valid wsProvider is set
-    if (!wsProvider || wsProvider === '') {
-      alert('Blockchain provider is not set. Please select a provider.');
+    if (!wsProvider) {
+      console.error('Blockchain provider is not set. Please select a provider.');
       return;
     }
 
@@ -68,93 +143,42 @@ export default function PolkadotTxBuilder() {
       const api = await ApiPromise.create({ provider });
       const decimals = api.registry.chainDecimals[0];
 
-      // Generate batch calls and JSON data for each contribution
-      const batchCalls: any[] = [];
-      let jsonData: any = {
-        transactionHash: '',
-        blockNumber: 0,
-        fromAddress: accountAddress,
-        toAddress: '',
-        project_id: txData.project_id,
-        blockchain: 'Polkadot',
-        group: txData.group,
-        success: false,
-        fee: '0',
-        contributions: []
-      };
+      const requiredTokens: { [key: string]: number } = {};
 
       for (const contribution of contributions) {
-        const contributionInputs: any[] = [];
-        const contributionOutputs: any[] = [];
-    
         for (const contributor of contribution.contributors) {
-          if (contributor.tokens.length === 1) {
-            await handleSingleTokenContribution(
-              contribution,
-              contributionInputs,
-              contributionOutputs,
-              batchCalls,
-              jsonData,
-              decimals,
-              api,
-              accountAddress,
-              txData
-            );
-          } else {
-            await handleMultipleTokensContribution(
-              contribution,
-              contributionInputs,
-              contributionOutputs,
-              batchCalls,
-              jsonData,
-              decimals,
-              api,
-              accountAddress,
-              txData
-            );
+          for (const token of contributor.tokens) {
+            const tokenKey = token.token;
+            requiredTokens[tokenKey] = (Number(requiredTokens[tokenKey]) || 0) + Number(token.amount);
           }
         }
-    
-        jsonData.contributions.push({
-          name: contribution.name,
-          labels: contribution.labels,
-          taskDate: contribution.date,
-          inputs: contributionInputs,
-          outputs: contributionOutputs
-        });
       }
 
-      console.log('Batch calls:', batchCalls);
-      console.log('JSON data:', jsonData);
+      for (const [tokenKey, requiredAmount] of Object.entries(requiredTokens)) {
+        const token = { token: tokenKey };
+        await checkWalletBalance(token, requiredAmount);
+      }
 
-      // Send the batch transaction
+      const { batchCalls, jsonData } = await generateBatchCalls(contributions, api, decimals, txData.wallet);
+
+      setTransactionStatus('in_progress');
       const batch = api.tx.utility.batchAll(batchCalls);
-      const unsub = await batch.signAndSend(accountAddress, { signer: injector.signer }, async ({ events = [], status }) => {
+      const unsub = await batch.signAndSend(txData.wallet, { signer: injector.signer }, async ({ events = [], status }) => {
         if (status.isInBlock) {
-          console.log(`Transaction included in block with hash: ${status.asInBlock.toString()}`);
           jsonData.transactionHash = status.asInBlock.toString();
-          jsonData.blockNumber = '';
         } else if (status.isFinalized) {
-          console.log(`Transaction finalized with status: ${status.type}`);
           jsonData.transactionHash = status.asFinalized.toString();
-          jsonData.blockNumber = '';
           jsonData.success = true;
         }
 
         events.forEach(({ phase, event: { data, method, section } }) => {
-          console.log(phase.toString() + ' : ' + section + '.' + method + ' ' + data.toString());
           if (section === 'transactionPayment' && method === 'TransactionFeePaid') {
             jsonData.fee = data[1].toString();
-            console.log('Transaction fee:', jsonData.fee);
           }
         });
 
         if (status.isFinalized) {
-          console.log('Final JSON data:', jsonData);
-  
-          // Check the value of the TESTING_MODE environment variable
-          if (process.env.NEXT_PUBLIC_TESTING_MODE == "true") {
-            // Testing mode: Run the updateTransactionTables function
+          if (TESTING_MODE) {
             try {
               await updateTransactionTables(jsonData);
               console.log('Transaction tables updated successfully');
@@ -162,30 +186,31 @@ export default function PolkadotTxBuilder() {
               console.error('Error updating transaction tables:', error);
             }
           } else {
-            // Production mode: Insert the jsonData into the pending_transactions table
-            const { data, error } = await supabaseAnon
-              .from('pending_transactions')
-              .insert([{json_data: jsonData}]);
-  
+            const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData }]);
+
             if (error) {
               console.error('Error inserting pending transaction:', error);
             } else {
               console.log('Pending transaction inserted successfully');
             }
           }
-  
+          setTransactionStatus('idle');
           unsub();
         }
       });
     } catch (error) {
       console.error('An error occurred while submitting the transaction:', error);
-      alert('An error occurred. Please check the console for more details.');
+      setTransactionStatus('idle');
     }
   };
 
   return (
     <>
-      <ContributionForm onSubmit={handleContributionSubmit} tokens={tokens} />
+      {transactionStatus === 'in_progress' ? (
+        <div>Transaction in progress...</div>
+      ) : (
+        <ContributionForm onSubmit={handleContributionSubmit} tokens={txData.tokens} />
+      )}
     </>
   );
-};
+}

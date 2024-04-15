@@ -1,14 +1,14 @@
-// pages/txbuilder/index.tsx
+// pages/transactions/index.tsx
 import React, { useState, useEffect } from 'react';
-import TxBuilderLayout from '../../layouts/TxBuilderLayout';
-import PolkadotTxBuilder from '../../components/Polkadot/PolkadotTxBuilder';
-import CardanoTxBuilder from '../../components/Cardano/CardanoTxBuilder';
+import TxLayout from '../../layouts/TxLayout';
+import PolkadotTransactions from '../../components/Polkadot/PolkadotTransactions';
+import CardanoTransactions from '../../components/Cardano/CardanoTransactions';
 import PolkadotWalletConnect from '../../components/Polkadot/PolkadotWalletConnect';
 import CardanoWalletConnect from '../../components/Cardano/CardanoWalletConnect';
 import { useTxData } from '../../context/TxDataContext';
 import styles from '../../styles/TxBuilder.module.css';
 
-export default function TxBuilder() {
+export default function Transactions() {
   const [blockchain, setBlockchain] = useState('Polkadot');
   const { txData, setTxData } = useTxData();
   const [wsProvider, setWsProvider] = useState('');
@@ -26,7 +26,7 @@ export default function TxBuilder() {
   }, [txData.provider]);
 
   return (
-    <TxBuilderLayout blockchain={blockchain}>
+    <TxLayout blockchain={blockchain}>
       <div className={styles.container}>
         <div className={styles.buttonContainer}>
           <button className={styles.button} onClick={() => setBlockchain('Polkadot')}>Polkadot</button>
@@ -36,16 +36,16 @@ export default function TxBuilder() {
           {blockchain === 'Polkadot' ? (
             <>
               <PolkadotWalletConnect />
-              <PolkadotTxBuilder />
+              <PolkadotTransactions />
             </>
           ) : (
             <>
               <CardanoWalletConnect />
-              <CardanoTxBuilder />
+              <CardanoTransactions />
             </>
           )}
         </div>
       </div>
-    </TxBuilderLayout>
+    </TxLayout>
   );
 }

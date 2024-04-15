@@ -7,6 +7,7 @@ import ProjectDetailsForm from '../../components/ProjectDetailsForm';
 import { fetchTokenBalances } from '../../utils/polkadot/fetchTokenBalances';
 import { updateTokensTable } from '../../utils/updateTokensTable';
 import { PROVIDERS } from '../../constants/providers';
+import styles from '../../styles/PolkadotWalletConnect.module.css';
 
 const PolkadotWalletConnect: React.FC = () => {
   const [accounts, setAccounts] = useState<InjectedAccountWithMeta[]>([]);
@@ -113,6 +114,7 @@ const PolkadotWalletConnect: React.FC = () => {
     if (selectedAccount && api) {
       const fetchedTokens: any = await fetchTokenBalances(api, selectedAccount, selectedProvider);
       setTokens(fetchedTokens);
+      console.log("Fetched tokens: ", fetchedTokens);
       await updateTokensTable(fetchedTokens);
     }
   };
@@ -168,37 +170,39 @@ const PolkadotWalletConnect: React.FC = () => {
   };
 
   return (
-    <div>
-      <select value={selectedProvider} onChange={(e) => setSelectedProvider(e.target.value)}>
-        {PROVIDERS.map((provider, index) => (
-          <option key={index} value={provider.url}>{provider.name}</option>
-        ))}
-      </select>
-      {status !== 'Connected' ? (
-        <button onClick={connectPolkadotWallet}>Connect Polkadot Wallet</button>
-      ) : (
-        <>
-          <button onClick={disconnectPolkadotWallet}>Disconnect Polkadot Wallet</button>
-          <select value={selectedAccount || ''} onChange={handleAccountChange}>
-            {accounts.map((account) => (
-              <option key={account.meta.name + account.meta.source} value={account.address}>
-                {account.meta.name + " " + account.meta.source}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
-      <p>Status: {status}</p>
+    <div className={styles.container}>
+      <div className={styles.connectionButtons}>
+        {status !== 'Connected' ? (
+          <button className={styles.button} onClick={connectPolkadotWallet}>Connect Polkadot Wallet</button>
+        ) : (
+          <>
+            <select className={styles.accountSelect} value={selectedProvider} onChange={(e) => setSelectedProvider(e.target.value)}>
+              {PROVIDERS.map((provider, index) => (
+                <option key={index} value={provider.url}>{provider.name}</option>
+              ))}
+            </select>
+            <select className={styles.accountSelect} value={selectedAccount || ''} onChange={handleAccountChange}>
+              {accounts.map((account) => (
+                <option key={account.meta.name + account.meta.source} value={account.address}>
+                  {account.meta.name + " " + account.meta.source}
+                </option>
+              ))}
+            </select>
+            <button className={styles.button} onClick={disconnectPolkadotWallet}>Disconnect Polkadot Wallet</button>
+          </>
+        )}
+      </div>
+      <p className={styles.status}>Status: {status}</p>
       {accounts.length > 0 && (
-        <div>
+        <div className={styles.accountInfo}>
           {selectedAccount && (
             <ProjectDetailsForm walletAddress={selectedAccount} blockchain="Polkadot" />
           )}
-          <h4>Balance</h4>
-          <div>
-            <p>Account Address: {selectedAccount}</p>
-            <p>Balance: {loading ? 'Loading...' : balance}</p>
-          </div>
+          <p className={styles.balance}>
+              Balance: {loading ? 'Loading...' : `${balance} ${
+                (tokens.find((token: any) => token.name === PROVIDERS.find((provider) => provider.url === selectedProvider)?.name) as any)?.symbol || ''
+              }`}
+            </p>
         </div>
       )}
     </div>

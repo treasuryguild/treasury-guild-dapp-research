@@ -98,15 +98,18 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
 
   return (
     <form onSubmit={handleSubmit}>
+      <p>Please enter wallet details:</p>
       <input
         type="text"
-        placeholder="Group Name"
+        placeholder="Group/Organization Name"
+        title="The name of your organization or group."
         value={groupName}
         onChange={(e) => setGroupName(e.target.value)}
       />
       <input
         type="text"
         placeholder="Project Name"
+        title="The name of your project."
         value={projectName}
         onChange={(e) => setProjectName(e.target.value)}
       />

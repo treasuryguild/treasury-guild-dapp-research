@@ -53,13 +53,13 @@ export default function PolkadotTransactions() {
       setup();
     updateProvider();
   }, [txData]);
-
+  
   const fetchBalance = async () => {
     const provider = new WsProvider(wsProvider);
     const api = await ApiPromise.create({ provider });
     const decimals = api.registry.chainDecimals[0];
     setTokenDecimals(decimals);
-
+    
     const storedAccount = localStorage.getItem('selectedAccount');
     if (!api || !storedAccount) {
       setBalance('');
@@ -75,72 +75,7 @@ export default function PolkadotTransactions() {
         setBalance(finalBalance.toFixed(4));
         console.log('Balance:', finalBalance);
       }
-    );
-    // Get the last block hash
-    const lastBlockHash = await api.rpc.chain.getBlockHash();
-  
-    // Get the block header
-    const blockHeader: any = await api.derive.chain.getHeader(lastBlockHash);
-
-    // Get the transaction details
-    const signedBlock = await api.rpc.chain.getBlock(lastBlockHash);
-    const allRecords: any = await api.query.system.events.at(signedBlock.block.header.hash);
-    allRecords.forEach((record: any, index: number) => {
-        console.log(`Record ${index}:`, record.event.data[0].toString());
-      });
-    // Find the relevant transaction record
-    const transactionRecord: any = allRecords.find(({ event }: any) =>
-        // Modify the condition based on the actual structure and values of the transaction record
-        event.section === 'balances' &&
-        event.method === 'Transfer' &&
-        event.data[1].toString() === walletAddress
-      );
-    console.log('All records:', allRecords);
-      if (transactionRecord) {
-        const fromAddress = transactionRecord.event.data[0].toString();
-        const amount = transactionRecord.event.data[2].toString();
-        console.log('Transaction record:', transactionRecord);
-        // Find the corresponding extrinsic for the event
-        const transactionEvent = allRecords.find(
-          ({ event }: any) =>
-            event.section === 'balances' &&
-            event.method === 'Transfer' &&
-            event.data[0].toString() === fromAddress &&
-            event.data[1].toString() === walletAddress &&
-            event.data[2].toString() === amount
-        );
-      
-        if (transactionEvent) {
-          const transactionIndex = transactionEvent.phase.asApplyExtrinsic.toNumber();
-          const transactionExtrinsic = signedBlock.block.extrinsics[transactionIndex];
-      
-          if (transactionExtrinsic) {
-            const transactionHash = transactionExtrinsic.hash.toString();
-      
-            // Create the JSON object
-            const transactionDetails = {
-              walletAddress: walletAddress,
-              fromAddress,
-              amount,
-              transactionHash,
-              blockNumber: blockHeader.number.toNumber(),
-              blockHash: blockHeader.hash.toString(),
-              timestamp: blockHeader.timestamp ? new Date(blockHeader.timestamp.toNumber()).toISOString() : new Date().toISOString(),
-            };
-      
-            console.log('Transaction details:', transactionDetails);
-      
-            // Send transaction details to Netlify function
-            //await sendTransactionDetailsToNetlify(transactionDetails);
-          } else {
-            console.log('Transaction extrinsic not found for the balance change event.');
-          }
-        } else {
-          console.log('Transaction event not found for the balance change event.');
-        }
-      } else {
-        console.log('Transaction record not found for the balance change event.');
-      }
+    ); 
   };
 
   return (

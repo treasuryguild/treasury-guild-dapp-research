@@ -163,11 +163,21 @@ export default function PolkadotTxBuilder() {
 
       setTransactionStatus('in_progress');
       const batch = api.tx.utility.batchAll(batchCalls);
+      const tx = batch;
       const unsub = await batch.signAndSend(txData.wallet, { signer: injector.signer }, async ({ events = [], status }) => {
         if (status.isInBlock) {
-          jsonData.transactionHash = status.asInBlock.toString();
+          console.log('Transaction included at block hash', status.asInBlock.toHex());
+          console.log('Waiting for finalization...');
         } else if (status.isFinalized) {
-          jsonData.transactionHash = status.asFinalized.toString();
+          console.log('Transaction finalized at block hash', status.asFinalized.toHex());
+          
+          const signedBlock = await api.rpc.chain.getBlock(status.asFinalized);
+          const extrinsicIndex = signedBlock.block.extrinsics.findIndex(
+            (ex) => ex.hash.toHex() === tx.hash.toHex()
+          );
+          const extrinsicHash = signedBlock.block.extrinsics[extrinsicIndex].hash.toHex();
+          
+          jsonData.transactionHash = extrinsicHash;
           jsonData.success = true;
         }
 

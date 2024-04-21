@@ -153,67 +153,64 @@ export default async function updateTransactionTables(jsonData) {
     contributions: contributions
   };
 
-  let transactionId;
+try {
+  // Start a transaction
+  await supabaseAnon.rpc('begin');
 
-  try {
-    // Start a transaction
-    await supabaseAnon.rpc('begin');
+  const { data: insertedTransaction, error: transactionError } = await supabaseAnon
+  .from('transactions')
+  .insert(transactionData)
+  .select('id');
 
-    const { data: insertedTransaction, error: transactionError } = await supabaseAnon
-      .from('transactions')
-      .insert(transactionData)
-      .select('id')
-      .single();
-
-    if (transactionError) {
-      throw transactionError;
-    }
-
-    transactionId = insertedTransaction.id;
-    transactionData.id = transactionId;
-
-    if (contributions.length > 0) {
-      const contributionData = contributions.map(contribution => ({
-        transaction_id: transactionId,
-        name: contribution.name,
-        labels: contribution.labels,
-        task_date: contribution.taskDate
-      }));
-
-      const { error: contributionError } = await supabaseAnon
-        .from('contributions')
-        .insert(contributionData);
-
-      if (contributionError) {
-        throw contributionError;
-      }
-
-      const allTokens = contributions.flatMap(contribution =>
-        contribution.inputs.flatMap(input =>
-          input.tokens.map(token => token.token)
-        ).concat(
-          contribution.outputs.flatMap(output =>
-            output.tokens.map(token => token.token)
-          )
-        )
-      );
-
-      const allExternalAddresses = contributions.flatMap(contribution =>
-        contribution.outputs.map(output => output.toAddress)
-      );
-
-      const [tokenMap, externalWalletMap] = await Promise.all([
-        getOrCreateTokens(allTokens),
-        getOrCreateExternalWallets(allExternalAddresses)
-      ]);
-
-      await insertTransactionData(transactionData, tokenMap, externalWalletMap);
-    }
-
-    // Commit the transaction
-    await supabaseAnon.rpc('commit');
-
-    console.log('Transaction tables updated successfully');
+  if (transactionError) {
+    console.error('Error inserting transaction:', transactionError);
+    throw transactionError;
+  }
+  
+  transactionData.id = insertedTransaction[0].id;
+  
+  if (contributions.length > 0) {
+    const contributionData = contributions.map(contribution => ({
+      transaction_id: transactionData.id,
+      name: contribution.name,
+      labels: contribution.labels,
+      task_date: contribution.taskDate
+    }));
+  
+  const { data: insertedContributions, error: contributionError } = await supabaseAnon
+    .from('contributions')
+    .insert(contributionData)
+    .select('id');
+  
+  if (contributionError) {
+    console.error('Error inserting contributions:', contributionError);
+    throw contributionError;
+  }
+  
+  const contributionIds = insertedContributions.map(contribution => contribution.id);
+  
+  const allTokens = contributions.flatMap(contribution =>
+    contribution.inputs.flatMap(input =>
+      input.tokens.map(token => token.token)
+    ).concat(
+      contribution.outputs.flatMap(output =>
+        output.tokens.map(token => token.token)
+      )
+    )
+  );
+  
+  const allExternalAddresses = contributions.flatMap(contribution =>
+    contribution.outputs.map(output => output.toAddress)
+  );
+  
+  const [tokenMap, externalWalletMap] = await Promise.all([
+    getOrCreateTokens(allTokens),
+    getOrCreateExternalWallets(allExternalAddresses)
+  ]);
+  
+  await insertTransactionData(transactionData, contributionIds, tokenMap, externalWalletMap);
+  }
+  console.log('Transaction tables updated successfully');
   } catch (error) {
     // Rollback the transaction in case of an error
     await supabaseAnon.rpc('rollback');

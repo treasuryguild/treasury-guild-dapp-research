@@ -150,7 +150,8 @@ export default async function updateTransactionTables(jsonData) {
     success: success,
     project_id: project_id,
     fee: fee,
-    contributions: contributions
+    contributions: contributions,
+    tx_type: 'outgoing'
   };
 
 try {

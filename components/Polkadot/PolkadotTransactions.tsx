@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { useTxData } from '../../context/TxDataContext';
 import { supabaseAnon } from '../../lib/supabaseClient';
-import { PROVIDERS } from '../../constants/providers';
+import { PROVIDERS, SUBSCAN_URLS } from '../../constants/providers';
 
 const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
 
@@ -59,6 +59,8 @@ export default function PolkadotTransactions() {
     const api = await ApiPromise.create({ provider });
     const decimals = api.registry.chainDecimals[0];
     setTokenDecimals(decimals);
+    const test = api.query.system.events()
+    console.log('Test:', test);
     
     const storedAccount = localStorage.getItem('selectedAccount');
     if (!api || !storedAccount) {

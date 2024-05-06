@@ -12,7 +12,7 @@ const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
 
 interface Contribution {
   name: string;
-  labels: string[];
+  labels: string;
   date: string;
   contributors: {
     tokens: {
@@ -113,7 +113,7 @@ export default function PolkadotTxBuilder() {
 
       jsonData.contributions.push({
         name: contribution.name,
-        labels: contribution.labels,
+        labels: contribution.labels.split(',').map(label => label.trim()),
         taskDate: contribution.date,
         inputs: contributionInputs,
         outputs: contributionOutputs,

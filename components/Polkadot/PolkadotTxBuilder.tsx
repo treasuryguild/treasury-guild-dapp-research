@@ -8,7 +8,7 @@ import { handleSingleTokenContribution } from '../../utils/polkadot/singleTokenC
 import { handleMultipleTokensContribution } from '../../utils/polkadot/multipleTokensContribution';
 import updateTransactionTables from '../../utils/updateTransactionTables';
 
-const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
+const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
 
 interface Contribution {
   name: string;

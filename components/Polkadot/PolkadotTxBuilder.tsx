@@ -8,7 +8,7 @@ import { handleSingleTokenContribution } from '../../utils/polkadot/singleTokenC
 import { handleMultipleTokensContribution } from '../../utils/polkadot/multipleTokensContribution';
 import updateTransactionTables from '../../utils/updateTransactionTables';
 
-const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
+const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
 
 interface Contribution {
   name: string;
@@ -179,6 +179,7 @@ export default function PolkadotTxBuilder() {
           
           jsonData.transactionHash = extrinsicHash;
           jsonData.success = true;
+          jsonData.tx_type = 'Outgoing';
         }
 
         events.forEach(({ phase, event: { data, method, section } }) => {

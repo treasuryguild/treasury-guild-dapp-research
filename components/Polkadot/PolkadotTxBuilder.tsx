@@ -197,7 +197,7 @@ export default function PolkadotTxBuilder() {
               console.error('Error updating transaction tables:', error);
             }
           } else {
-            const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData }]);
+            const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData, hash: jsonData.transactionHash}]);
 
             if (error) {
               console.error('Error inserting pending transaction:', error);

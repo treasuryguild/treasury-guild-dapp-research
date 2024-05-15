@@ -23,15 +23,25 @@ export const handleMultipleTokensContribution = async (
 
       batchCalls.push(transferCall);
 
-      contributionInputs.push({
-        fromAddress: accountAddress,
-        token: tokenData,
-        amount: amount.toString()
-      });
+      // Check if the contributor's input data already exists in contributionInputs
+      const existingInput = contributionInputs.find(
+        (input) =>
+          input.fromAddress === accountAddress &&
+          input.token.symbol === tokenData.symbol &&
+          input.amount === amount.toString()
+      );
+
+      if (!existingInput) {
+        contributionInputs.push({
+          fromAddress: accountAddress,
+          token: tokenData,
+          amount: amount.toString(),
+        });
+      }
 
       contributorOutputs.push({
         token: tokenData,
-        amount: amount.toString()
+        amount: amount.toString(),
       });
     }
 
@@ -41,21 +51,38 @@ export const handleMultipleTokensContribution = async (
       Role: contributor.role.split(',').map((label: any) => label.trim()),
       Labels: contribution.labels.split(',').map((label: any) => label.trim()),
       Date: contribution.date,
-      Tokens: contributor.tokens.map((token: any) => ({ token: token.token, amount: token.amount.toString() })),
+      Tokens: contributor.tokens.map((token: any) => ({
+        token: token.token,
+        amount: token.amount.toString(),
+      })),
       ContributorId: contributorId,
     };
-
     const remarkMessage = JSON.stringify(remarkData);
     const remarkCall = api.tx.system.remark(remarkMessage);
 
     batchCalls.push(remarkCall);
 
-    contributionOutputs.push({
-      toAddress: contributor.walletAddress,
-      tokens: contributorOutputs,
-      role: contributor.role.split(',').map((label: any) => label.trim()),
-      walletId: null,
-      externalWalletId: null
-    });
+    // Check if the contributor's output data already exists in contributionOutputs
+    const existingOutput = contributionOutputs.find(
+      (output) =>
+        output.toAddress === contributor.walletAddress &&
+        output.role.join(',') === contributor.role &&
+        output.tokens.length === contributorOutputs.length &&
+        output.tokens.every(
+          (token: any, index: any) =>
+            token.token.symbol === contributorOutputs[index].token.symbol &&
+            token.amount === contributorOutputs[index].amount
+        )
+    );
+
+    if (!existingOutput) {
+      contributionOutputs.push({
+        toAddress: contributor.walletAddress,
+        tokens: contributorOutputs,
+        role: contributor.role.split(',').map((label: any) => label.trim()),
+        walletId: null,
+        externalWalletId: null,
+      });
+    }
   }
 };

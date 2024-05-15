@@ -69,9 +69,23 @@ async function getOrCreateExternalWallets(addresses) {
   return existingWalletMap;
 }
 
+function removeDuplicateContributions(contributions) {
+  const uniqueContributions = contributions.reduce((acc, contribution) => {
+    const key = `${contribution.inputs.map(input => input.fromAddress).join(',')}-${contribution.outputs.map(output => output.toAddress).join(',')}-${contribution.outputs.map(output => output.role).join(',')}`;
+    if (!acc[key]) {
+      acc[key] = contribution;
+    }
+    return acc;
+  }, {});
+
+  return Object.values(uniqueContributions);
+}
+
 export default async function updateTransactionTables(jsonData) {
   const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions = [], tx_type } = jsonData;
 
+  const uniqueContributions = removeDuplicateContributions(contributions);
+  
   const transactionData = {
     hash: transactionHash,
     block_number: blockNumber,
@@ -108,38 +122,14 @@ export default async function updateTransactionTables(jsonData) {
     ]);
 
     const { data: insertedTransaction, error: transactionError } = await supabaseAnon
-      .from('transactions')
-      .insert({
-        ...transactionData,
-        data: {
-          ...transactionData,
-          contributions: contributions.map((contribution, index) => ({
-            ...contribution,
-            inputs: contribution.inputs.map(input => ({
-              ...input,
-              tokens: input.tokens.map(token => ({
-                ...token,
-                token: {
-                  id: tokenMap.get(token.token.name),
-                  ...token.token
-                }
-              }))
-            })),
-            outputs: contribution.outputs.map(output => ({
-              ...output,
-              tokens: output.tokens.map(token => ({
-                ...token,
-                token: {
-                  id: tokenMap.get(token.token.name),
-                  ...token.token
-                }
-              })),
-              externalWalletId: externalWalletMap.get(output.toAddress)
-            }))
-          }))
-        }
-      })
-      .select('id');
+    .from('transactions')
+    .insert({
+      ...transactionData,
+      data: {
+        ...transactionData
+      }
+    })
+    .select('id');
 
     if (transactionError) {
       console.error('Error inserting transaction:', transactionError);

@@ -95,7 +95,8 @@ export default function PolkadotTxBuilder() {
             decimals,
             api,
             wallet,
-            txData
+            txData,
+            contributor
           );
         } else {
           await handleMultipleTokensContribution(
@@ -107,7 +108,8 @@ export default function PolkadotTxBuilder() {
             decimals,
             api,
             wallet,
-            txData
+            txData,
+            contributor
           );
         }
       }
@@ -119,7 +121,7 @@ export default function PolkadotTxBuilder() {
         inputs: contributionInputs,
         outputs: contributionOutputs,
       });
-      //console.log("jsonData: ", jsonData);
+      console.log("jsonData: ", jsonData);
     }
 
     return { batchCalls, jsonData };

@@ -10,9 +10,10 @@ export const handleMultipleTokensContribution = async (
   decimals: number,
   api: ApiPromise,
   accountAddress: string,
-  txData: any
+  txData: any,
+  contributor: any
 ) => {
-  for (const contributor of contribution.contributors) {
+
     const contributorOutputs: any[] = [];
 
     for (const token of contributor.tokens) {
@@ -86,5 +87,4 @@ export const handleMultipleTokensContribution = async (
         externalWalletId: null,
       });
     }
-  }
 };

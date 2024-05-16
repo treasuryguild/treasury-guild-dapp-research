@@ -78,12 +78,13 @@ export default function PolkadotTxBuilder() {
       fee: '0',
       contributions: [],
     };
-
+    //console.log("contributions: ", contributions );
     for (const contribution of contributions) {
       const contributionInputs: any[] = [];
       const contributionOutputs: any[] = [];
-
+      //console.log("contribution: ", contribution);
       for (const contributor of contribution.contributors) {
+        //console.log("contributor: ", contributor);
         if (contributor.tokens.length === 1) {
           await handleSingleTokenContribution(
             contribution,
@@ -118,6 +119,7 @@ export default function PolkadotTxBuilder() {
         inputs: contributionInputs,
         outputs: contributionOutputs,
       });
+      //console.log("jsonData: ", jsonData);
     }
 
     return { batchCalls, jsonData };

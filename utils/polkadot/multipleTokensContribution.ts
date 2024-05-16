@@ -27,6 +27,7 @@ export const handleMultipleTokensContribution = async (
       const existingInput = contributionInputs.find(
         (input) =>
           input.fromAddress === accountAddress &&
+          input.role.join(',') === contributor.role &&
           input.token.symbol === tokenData.symbol &&
           input.amount === amount.toString()
       );
@@ -34,6 +35,7 @@ export const handleMultipleTokensContribution = async (
       if (!existingInput) {
         contributionInputs.push({
           fromAddress: accountAddress,
+          role: contributor.role.split(',').map((label: any) => label.trim()),
           token: tokenData,
           amount: amount.toString(),
         });

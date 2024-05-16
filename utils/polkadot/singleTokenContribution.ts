@@ -37,6 +37,7 @@ export const handleSingleTokenContribution = async (
     const existingInput = contributionInputs.find(
       (input) =>
         input.fromAddress === accountAddress &&
+        input.role.join(',') === contributor.role &&
         input.tokens.length === 1 &&
         input.tokens[0].token.symbol === tokenData.symbol &&
         input.tokens[0].amount === amount.toString()
@@ -46,6 +47,7 @@ export const handleSingleTokenContribution = async (
       contributionInputs.push({
         fromAddress: accountAddress,
         tokens: [{ token: tokenData, amount: amount.toString() }],
+        role: contributor.role.split(',').map((label: any) => label.trim()),
       });
     }
 

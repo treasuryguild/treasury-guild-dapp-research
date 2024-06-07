@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import ContributionForm from '../ContributionForm';
+import UploadJson from '../UploadJson';
 import { useTxData } from '../../context/TxDataContext';
 import { supabaseAnon } from '../../lib/supabaseClient';
 import { handleSingleTokenContribution } from '../../utils/polkadot/singleTokenContribution';
@@ -26,6 +27,7 @@ export default function PolkadotTxBuilder() {
   const [wsProvider, setWsProvider] = useState('wss://ws.test.azero.dev');
   const { txData, setTxData } = useTxData();
   const [transactionStatus, setTransactionStatus] = useState('idle');
+  const [activeForm, setActiveForm] = useState('contribution');
 
   const checkWalletBalance = async (token: { token: string }, requiredAmount: number) => {
     const tokenInfo = txData.tokens.find((t: any) => t.symbol === token.token);
@@ -221,10 +223,16 @@ export default function PolkadotTxBuilder() {
 
   return (
     <>
+      <div>
+        <button onClick={() => setActiveForm('contribution')}>Contribution Form</button>
+        <button onClick={() => setActiveForm('uploadJson')}>Upload JSON</button>
+      </div>
       {transactionStatus === 'in_progress' ? (
         <div>Transaction in progress...</div>
-      ) : (
+      ) : activeForm === 'contribution' ? (
         <ContributionForm onSubmit={handleContributionSubmit} tokens={txData.tokens} />
+      ) : (
+        <UploadJson onSubmit={handleContributionSubmit} /> // Render the new component
       )}
     </>
   );

@@ -54,6 +54,36 @@ export default function PolkadotTransactions() {
     updateProvider();
   }, [txData]);
   
+  async function fetchTransactionDetails(address: string) {
+    const apiUrl = `https://alephzero-testnet.api.subscan.io/api/v2/scan/transfers`;
+    const params = {
+      address: address,
+      row: 10,
+      page: 0,
+    };
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Data:', data);
+      if (data && data.data && data.data.transfers && data.data.transfers.length > 0) {
+        // Sort the transfers by timestamp in descending order
+        const sortedTransfers = data.data.transfers.sort((a: any, b: any) => b.block_timestamp - a.block_timestamp);
+        console.log('Sorted Transfers:', sortedTransfers);
+        return sortedTransfers;
+      }
+    }
+
+    return [];
+  }
+
   const fetchBalance = async () => {
     const provider = new WsProvider(wsProvider);
     const api = await ApiPromise.create({ provider });
@@ -78,6 +108,8 @@ export default function PolkadotTransactions() {
         console.log('Balance:', finalBalance);
       }
     ); 
+
+    fetchTransactionDetails(storedAccount);
   };
 
   return (

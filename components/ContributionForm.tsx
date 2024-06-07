@@ -34,6 +34,20 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
     setContributions(contributions.filter(contribution => contribution.id !== id));
   };
 
+  const checkForDuplicates = () => {
+    const seen = new Set();
+    for (const contribution of contributions) {
+      for (const tokenAmount of contribution.tokenAmounts) {
+        const key = `${contribution.name}-${contribution.labels}-${contribution.date}-${contribution.walletAddress}-${contribution.role}-${tokenAmount.token}-${tokenAmount.amount}`;
+        if (seen.has(key)) {
+          return true;
+        }
+        seen.add(key);
+      }
+    }
+    return false;
+  };
+
   // Preparing contributions for submission by grouping them based on name, labels, and date
   const prepareForSubmission = () => {
     const grouped = contributions.reduce((acc: any, current: any) => {
@@ -51,6 +65,10 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
+    if (checkForDuplicates()) {
+      alert('Duplicate contributions detected. Please review your entries.');
+      return;
+    }
     const preparedContributions = prepareForSubmission();
     onSubmit(preparedContributions);
   };

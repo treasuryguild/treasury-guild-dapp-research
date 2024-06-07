@@ -17,7 +17,7 @@ const Home: NextPage = () => {
         <div>
             <h1 className={styles.title}>Welcome to the Treasury Guild</h1>
             <p className={styles.description}>
-                {`The Treasury Guild is a place where you can manage your project's budget and transactions.`}
+                {`Treasury Guild is a place where you can manage your project's budget and transactions.`}
             </p>
             <div className={styles.grid}>
                 <Link href="/txbuilder" className={styles.card}>              

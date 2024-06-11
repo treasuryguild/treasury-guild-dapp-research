@@ -1,10 +1,11 @@
 // components/PolkadotWalletConnect.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
 import { useTxData } from '../../context/TxDataContext';
 import ProjectDetailsForm from '../../components/ProjectDetailsForm';
 import { fetchTokenBalances } from '../../utils/polkadot/fetchTokenBalances';
+import { checkWalletStatus } from '../../utils/polkadot/checkWalletStatus';
 import { updateTokensTable } from '../../utils/updateTokensTable';
 import { PROVIDERS } from '../../constants/providers';
 import styles from '../../styles/PolkadotWalletConnect.module.css';
@@ -20,6 +21,7 @@ const PolkadotWalletConnect: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [tokenDecimals, setTokenDecimals] = useState(0);
   const [tokens, setTokens] = useState([]);
+  const walletStatusChecked = useRef<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const setup = async () => {
@@ -108,6 +110,21 @@ const PolkadotWalletConnect: React.FC = () => {
 
   useEffect(() => {
     fetchBalance();
+  }, [selectedAccount, api]);
+
+  const checkWalletStatusIfNeeded = async () => {
+    if (selectedAccount && api) {
+      const key = `${selectedAccount}-${selectedProvider}-${balance}`;
+      if (!walletStatusChecked.current[key]) {
+        const walletStatus = await checkWalletStatus(api, selectedAccount, selectedProvider);
+        console.log('Wallet status:', walletStatus);
+        walletStatusChecked.current[key] = true;
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkWalletStatusIfNeeded();
   }, [selectedAccount, api]);
 
   const fetchAndSetTokens = async () => {

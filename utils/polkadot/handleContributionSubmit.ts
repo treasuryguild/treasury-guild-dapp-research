@@ -86,6 +86,7 @@ export default async function handleContributionSubmit(
         jsonData.transactionHash = extrinsicHash;
         jsonData.success = true;
         jsonData.tx_type = 'Outgoing';
+        jsonData.blockNumber = signedBlock.block.header.number.toNumber();
       }
 
       events.forEach(({ phase, event: { data, method, section } }) => {

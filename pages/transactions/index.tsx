@@ -12,6 +12,7 @@ export default function Transactions() {
   const [blockchain, setBlockchain] = useState('Polkadot');
   const { txData, setTxData } = useTxData();
   const [wsProvider, setWsProvider] = useState('');
+  const [balanceLoaded, setBalanceLoaded] = useState(false);
 
   useEffect(() => {
     const updateProvider = async () => {
@@ -35,8 +36,8 @@ export default function Transactions() {
         <div className={styles.content}>
           {blockchain === 'Polkadot' ? (
             <>
-              <PolkadotWalletConnect />
-              <PolkadotTransactions />
+              <PolkadotWalletConnect onBalanceLoaded={setBalanceLoaded} />
+              {balanceLoaded && <PolkadotTransactions />}
             </>
           ) : (
             <>

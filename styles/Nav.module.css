@@ -1,0 +1,23 @@
+.routes {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1a1a1a;
+    padding: 1rem;
+  }
+  
+  .navitems {
+    margin: 0 1rem;
+    padding: 0.5rem 1rem;
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    border-radius: 4px;
+  }
+  
+  .navitems:hover {
+    color: #0885ff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }

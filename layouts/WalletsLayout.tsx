@@ -2,11 +2,11 @@
 import RootLayout from './RootLayout';
 import styles from '../styles/Layouts.module.css';
 
-export default function TxLayout({ children, blockchain }: Readonly<{children: React.ReactNode; blockchain: string;}>) {
+export default function WalletsLayout({ children, blockchain }: Readonly<{children: React.ReactNode; blockchain: string;}>) {
   return (
-    <RootLayout title="Transactions" description="View all transactions">
+    <RootLayout title="TxBuilder" description="Building transaction">
       <header className={styles.header}>
-        <h1 className={styles.title}>Transactions - {blockchain}</h1>
+        <h1 className={styles.title}>Wallets - {blockchain}</h1>
       </header>
       <main>{children}</main>
       <footer>

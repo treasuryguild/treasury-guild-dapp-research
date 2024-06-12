@@ -1,6 +1,6 @@
 // Assuming this file is saved as layouts/ExamplePageLayout.js
 import RootLayout from './RootLayout';
-import styles from '../styles/TxLayout.module.css';
+import styles from '../styles/Layouts.module.css';
 
 export default function TxBuilderLayout({ children, blockchain }: Readonly<{children: React.ReactNode; blockchain: string;}>) {
   return (

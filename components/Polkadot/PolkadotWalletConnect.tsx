@@ -10,7 +10,7 @@ import { updateTokensTable } from '../../utils/updateTokensTable';
 import { PROVIDERS } from '../../constants/providers';
 import styles from '../../styles/PolkadotWalletConnect.module.css';
 
-const PolkadotWalletConnect: React.FC = () => {
+const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => void }> = ({ onBalanceLoaded }) => {
   const [accounts, setAccounts] = useState<InjectedAccountWithMeta[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('Not connected');
@@ -22,6 +22,7 @@ const PolkadotWalletConnect: React.FC = () => {
   const [tokenDecimals, setTokenDecimals] = useState(0);
   const [tokens, setTokens] = useState([]);
   const walletStatusChecked = useRef<{ [key: string]: boolean }>({});
+  const [balanceLoaded, setBalanceLoaded] = useState(false);
 
   useEffect(() => {
     const setup = async () => {
@@ -89,7 +90,21 @@ const PolkadotWalletConnect: React.FC = () => {
     }
   }, [txData.wallet]);
 
+  const checkWalletStatusIfNeeded = async (finalBalance: any) => {
+    if (selectedAccount && api) {
+      const key = `${selectedAccount}-${selectedProvider}-${finalBalance}`;
+      console.log('Checking wallet status if needed...', key, walletStatusChecked.current[key]);
+      if (!walletStatusChecked.current[key]) {
+        const walletStatus = await checkWalletStatus(api, selectedAccount, selectedProvider);
+        console.log('Wallet status:', walletStatus, selectedAccount, selectedProvider, walletStatusChecked.current[key], key, finalBalance);
+        walletStatusChecked.current[key] = true;
+      }
+    }
+  };
+
   const fetchBalance = async () => {
+    setBalanceLoaded(false);
+    onBalanceLoaded(false);
     const storedAccount = localStorage.getItem('selectedAccount');
     if (!api || !storedAccount) {
       setBalance('');
@@ -104,27 +119,17 @@ const PolkadotWalletConnect: React.FC = () => {
         const finalBalance = Number(balanceInDOT) / 10 ** tokenDecimals;
         setBalance(finalBalance.toFixed(4));
         console.log('Balance:', finalBalance);
+        if (finalBalance > 0 && (status == 'Connected' || status == 'Connecting...')) {
+          checkWalletStatusIfNeeded(finalBalance);
+          setBalanceLoaded(true);
+          onBalanceLoaded(true);
+        }
       }
     );
   };
 
   useEffect(() => {
     fetchBalance();
-  }, [selectedAccount, api]);
-
-  const checkWalletStatusIfNeeded = async () => {
-    if (selectedAccount && api) {
-      const key = `${selectedAccount}-${selectedProvider}-${balance}`;
-      if (!walletStatusChecked.current[key]) {
-        const walletStatus = await checkWalletStatus(api, selectedAccount, selectedProvider);
-        console.log('Wallet status:', walletStatus);
-        walletStatusChecked.current[key] = true;
-      }
-    }
-  };
-
-  useEffect(() => {
-    checkWalletStatusIfNeeded();
   }, [selectedAccount, api]);
 
   const fetchAndSetTokens = async () => {

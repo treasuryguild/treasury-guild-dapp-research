@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 
 interface UploadJsonProps {
   onSubmit: (contributions: any) => void;
+  tokens: any[];
 }
 
-const UploadJson: React.FC<UploadJsonProps> = ({ onSubmit }) => {
+const UploadJson: React.FC<UploadJsonProps> = ({ onSubmit, tokens }) => {
   const [jsonFile, setJsonFile] = useState<File | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

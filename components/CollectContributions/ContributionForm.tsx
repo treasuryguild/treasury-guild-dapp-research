@@ -1,6 +1,6 @@
 // components/ContributionForm.jsx
 import React, { useState } from 'react';
-import styles from '../styles/ContributionForm.module.css';
+import styles from '../../styles/ContributionForm.module.css';
 
 function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbol: string, balance: string }[] }) {
   const [contributions, setContributions] = useState([

@@ -1,6 +1,5 @@
 // This could be any page inside the pages directory, for example, pages/about.js
 import WalletsLayout from '../layouts/WalletsLayout';
-import WalletConnector from '../components/WalletConnector';
 import { useState } from 'react';
 import styles from '../styles/Wallets.module.css';
 import PolkadotWalletConnect from '../components/Polkadot/PolkadotWalletConnect';

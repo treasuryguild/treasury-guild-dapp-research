@@ -1,11 +1,12 @@
 // components/PolkadotTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
-import ContributionForm from '../ContributionForm';
+import ContributionForms from '../CollectContributions/ContributionForms';
 import { useTxData } from '../../context/TxDataContext';
 
 export default function CardanoTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
   const { txData, setTxData } = useTxData();
+  const [activeForm, setActiveForm] = useState('contribution');
 
   const handleContributionSubmit = async (contributions: any) => {
     console.log('Submitting contributions:', contributions);
@@ -28,10 +29,7 @@ export default function CardanoTxBuilder() {
       policy_id: '',
       blockchain: 'Cardano',
     }]
-  return (
-    <>
-      <ContributionForm onSubmit={handleContributionSubmit} tokens={tokens}/>
-
-    </>
-  );
-};
+    return (
+      <ContributionForms onContributionSubmit={handleContributionSubmit} tokens={tokens} />
+    );
+  }

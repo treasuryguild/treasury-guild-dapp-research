@@ -1,4 +1,4 @@
-// components/ContributionForms.tsx
+// components/ContributionFormOptions.tsx
 import React, { useState } from 'react';
 import ContributionForm from './ContributionForm';
 import UploadJson from './UploadJson';
@@ -18,12 +18,12 @@ interface Contribution {
   }[];
 }
 
-interface ContributionFormsProps {
+interface ContributionFormOptionsProps {
   onContributionSubmit: (contributions: any) => void;
   tokens: any[];
 }
 
-export default function ContributionForms({ onContributionSubmit, tokens }: ContributionFormsProps) {
+export default function ContributionFormOptions({ onContributionSubmit, tokens }: ContributionFormOptionsProps) {
   const [activeForm, setActiveForm] = useState('contribution');
 
   return (

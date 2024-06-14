@@ -1,6 +1,6 @@
 // components/PolkadotTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
-import ContributionForms from '../CollectContributions/ContributionForms';
+import ContributionFormOptions from '../CollectContributions/ContributionFormOptions';
 import { useTxData } from '../../context/TxDataContext';
 import handleContributionSubmit from '../../utils/polkadot/handleContributionSubmit';
 import { generateBatchCalls } from '../../utils/polkadot/generateBatchCalls';
@@ -29,7 +29,7 @@ export default function PolkadotTxBuilder() {
       {transactionStatus === 'in_progress' ? (
         <div>Transaction in progress...</div>
       ) : (
-        <ContributionForms
+        <ContributionFormOptions
           onContributionSubmit={(contributions) =>
             handleContributionSubmit(
               contributions,

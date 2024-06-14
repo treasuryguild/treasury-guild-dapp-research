@@ -1,6 +1,6 @@
 // components/PolkadotTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
-import ContributionForms from '../CollectContributions/ContributionForms';
+import ContributionForms from '../CollectContributions/ContributionFormOptions';
 import { useTxData } from '../../context/TxDataContext';
 
 export default function CardanoTxBuilder() {

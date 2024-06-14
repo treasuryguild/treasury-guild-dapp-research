@@ -26,17 +26,22 @@ async function getProjectIdByAddress(address: any) {
     return `${year}-${month}-${day}`;
   }
 
-async function getExistingTransactionHashes() {
+  async function getExistingTransactionHashes() {
     const { data: transactions, error: transactionsError } = await supabaseAnon
         .from('transactions')
         .select('hash');
 
-    if (transactionsError) {
-        console.error('Error fetching existing transaction hashes from Supabase:', transactionsError.message);
+    const { data: pendingTransactions, error: pendingTransactionsError } = await supabaseAnon
+        .from('pending_transactions')
+        .select('hash');
+
+    if (transactionsError || pendingTransactionsError) {
+        console.error('Error fetching existing transaction hashes from Supabase:', transactionsError?.message || pendingTransactionsError?.message);
         return [];
     }
 
-    return transactions.map(transaction => transaction.hash);
+    const allTransactions = [...transactions, ...pendingTransactions];
+    return allTransactions.map(transaction => transaction.hash);
 }
 
 async function fetchTransactionDetails(subscanUrl: string, address: string) {
@@ -163,9 +168,20 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                     };
 
                     try {
-                        const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData, hash: jsonData.transactionHash}]);
-                        console.log('Transaction details sent to Supabase successfully:', jsonData);
-                        //console.log('data', data);
+                        if (jsonData.project_id) {
+                            const existingHash = await supabaseAnon
+                                .from('pending_transactions')
+                                .select('hash')
+                                .eq('hash', jsonData.transactionHash)
+                                .single();
+                    
+                            if (!existingHash.data) {
+                                const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData, hash: jsonData.transactionHash}]);
+                                console.log('Transaction details sent to Supabase successfully:', jsonData);
+                            } else {
+                                console.log('Transaction already exists in pending_transactions:', jsonData.transactionHash);
+                            }
+                        }
                     } catch (error) {
                         console.error('Error sending transaction details to Supabase:', error);
                     }

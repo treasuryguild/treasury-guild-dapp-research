@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
 import { useTxData } from '../../context/TxDataContext';
-import ProjectDetailsForm from '../../components/ProjectDetailsForm';
+import ProjectDetailsForm from '../ProjectDetailsForm';
 import { fetchTokenBalances } from '../../utils/polkadot/fetchTokenBalances';
 import { checkWalletStatus } from '../../utils/polkadot/checkWalletStatus';
 import { updateTokensTable } from '../../utils/updateTokensTable';
@@ -95,9 +95,11 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
       const key = `${selectedAccount}-${selectedProvider}-${finalBalance}`;
       console.log('Checking wallet status if needed...', key, walletStatusChecked.current[key]);
       if (!walletStatusChecked.current[key]) {
+        walletStatusChecked.current[key] = true;
         const walletStatus = await checkWalletStatus(api, selectedAccount, selectedProvider);
         console.log('Wallet status:', walletStatus, selectedAccount, selectedProvider, walletStatusChecked.current[key], key, finalBalance);
-        walletStatusChecked.current[key] = true;
+        setBalanceLoaded(true);
+        onBalanceLoaded(true);
       }
     }
   };
@@ -119,10 +121,8 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
         const finalBalance = Number(balanceInDOT) / 10 ** tokenDecimals;
         setBalance(finalBalance.toFixed(4));
         console.log('Balance:', finalBalance);
-        if (finalBalance > 0 && (status == 'Connected' || status == 'Connecting...')) {
+        if (finalBalance && (status == 'Connected')) {
           checkWalletStatusIfNeeded(finalBalance);
-          setBalanceLoaded(true);
-          onBalanceLoaded(true);
         }
       }
     );

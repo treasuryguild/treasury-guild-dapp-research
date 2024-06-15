@@ -1,12 +1,17 @@
 // pages/transactions/index.tsx
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import TxLayout from '../../layouts/TxLayout';
 import PolkadotTransactions from '../../components/Polkadot/PolkadotTransactions';
 import CardanoTransactions from '../../components/Cardano/CardanoTransactions';
-import PolkadotWalletConnect from '../../components/Polkadot/PolkadotWalletConnect';
 import CardanoWalletConnect from '../../components/Cardano/CardanoWalletConnect';
 import { useTxData } from '../../context/TxDataContext';
 import styles from '../../styles/TxBuilder.module.css';
+
+const PolkadotWalletConnect = dynamic(
+  () => import('../../components/Polkadot/PolkadotWalletConnect'),
+  { ssr: false }
+);
 
 export default function Transactions() {
   const [blockchain, setBlockchain] = useState('Polkadot');

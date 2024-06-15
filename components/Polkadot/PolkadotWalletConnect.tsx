@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
+import { enableExtension, getAccounts } from '../../utils/polkadot/polkadotExtensionDapp';
 import { useTxData } from '../../context/TxDataContext';
 import ProjectDetailsForm from '../ProjectDetailsForm';
 import { fetchTokenBalances } from '../../utils/polkadot/fetchTokenBalances';
@@ -25,6 +26,8 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   const [balanceLoaded, setBalanceLoaded] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const setup = async () => {
       setLoading(true);
       const wsProvider = new WsProvider(selectedProvider);
@@ -47,11 +50,15 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
 
   const enableAndFetchAccounts = async () => {
     if (typeof window === 'undefined') return null;
-    const { web3Enable, web3Accounts } = await import('@polkadot/extension-dapp');
-    const extensions = await web3Enable('Your App Name');
-    if (extensions.length === 0) return null;
-    const accounts = await web3Accounts();
-    return accounts.length > 0 ? accounts : null;
+
+    try {
+      await enableExtension('Your App Name');
+      const accounts = await getAccounts();
+      return accounts.length > 0 ? accounts : null;
+    } catch (error) {
+      console.error('Error enabling and fetching accounts:', error);
+      return null;
+    }
   };
 
   const checkForWalletConnection = async () => {
@@ -60,13 +67,13 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
       setStatus('Not connected');
       return;
     }
-  
+
     const accounts = await enableAndFetchAccounts();
     if (accounts) {
       setAccounts(accounts);
       setStatus('Connected');
       const storedAccount = localStorage.getItem('selectedAccount');
-      if (storedAccount && accounts.some((account) => account.address === storedAccount)) {
+      if (storedAccount && accounts.some((account: any) => account.address === storedAccount)) {
         setSelectedAccount(storedAccount);
         setTxData((prevTxData) => ({
           ...prevTxData,
@@ -85,7 +92,7 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   };
 
   useEffect(() => {
-    if (txData.wallet === '') {
+    if (txData.wallet === '' && typeof window !== 'undefined') {
       checkForWalletConnection();
     }
   }, [txData.wallet]);
@@ -105,6 +112,8 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   };
 
   const fetchBalance = async () => {
+    if (typeof window === 'undefined') return;
+
     setBalanceLoaded(false);
     onBalanceLoaded(false);
     const storedAccount = localStorage.getItem('selectedAccount');
@@ -129,11 +138,13 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   };
 
   useEffect(() => {
-    fetchBalance();
+    if (typeof window !== 'undefined') {
+      fetchBalance();
+    }
   }, [selectedAccount, api]);
 
   const fetchAndSetTokens = async () => {
-    if (selectedAccount && api) {
+    if (typeof window !== 'undefined' && selectedAccount && api) {
       const fetchedTokens: any = await fetchTokenBalances(api, selectedAccount, selectedProvider);
       setTokens(fetchedTokens);
       console.log("Fetched tokens: ", fetchedTokens);
@@ -142,14 +153,18 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   };
 
   useEffect(() => {
-    fetchAndSetTokens();
+    if (typeof window !== 'undefined') {
+      fetchAndSetTokens();
+    }
   }, [selectedAccount, api]);
 
   useEffect(() => {
-    setTxData((prevTxData) => ({
-      ...prevTxData,
-      tokens
-    }));
+    if (typeof window !== 'undefined') {
+      setTxData((prevTxData) => ({
+        ...prevTxData,
+        tokens
+      }));
+    }
   }, [tokens, setTxData]);
 
   const connectPolkadotWallet = async () => {

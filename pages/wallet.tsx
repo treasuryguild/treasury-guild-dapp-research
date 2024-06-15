@@ -1,9 +1,15 @@
 // This could be any page inside the pages directory, for example, pages/about.js
 import WalletsLayout from '../layouts/WalletsLayout';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import styles from '../styles/Wallets.module.css';
-import PolkadotWalletConnect from '../components/Polkadot/PolkadotWalletConnect';
+//import PolkadotWalletConnect from '../components/Polkadot/PolkadotWalletConnect';
 import CardanoWalletConnect from '../components/Cardano/CardanoWalletConnect';
+
+const PolkadotWalletConnect = dynamic(
+  () => import('../components/Polkadot/PolkadotWalletConnect'),
+  { ssr: false }
+);
 
 export default function WalletPage() {
   const [blockchain, setBlockchain] = useState('Polkadot');

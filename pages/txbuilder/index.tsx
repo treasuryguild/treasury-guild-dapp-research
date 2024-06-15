@@ -1,11 +1,27 @@
-// pages/txbuilder/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import TxBuilderLayout from '../../layouts/TxBuilderLayout';
-import PolkadotTxBuilder from '../../components/Polkadot/PolkadotTxBuilder';
-import CardanoTxBuilder from '../../components/Cardano/CardanoTxBuilder';
-import PolkadotWalletConnect from '../../components/Polkadot/PolkadotWalletConnect';
-import CardanoWalletConnect from '../../components/Cardano/CardanoWalletConnect';
 import styles from '../../styles/TxBuilder.module.css';
+
+const PolkadotTxBuilder = dynamic(
+  () => import('../../components/Polkadot/PolkadotTxBuilder'),
+  { ssr: false }
+);
+
+const CardanoTxBuilder = dynamic(
+  () => import('../../components/Cardano/CardanoTxBuilder'),
+  { ssr: false }
+);
+
+const PolkadotWalletConnect = dynamic(
+  () => import('../../components/Polkadot/PolkadotWalletConnect'),
+  { ssr: false }
+);
+
+const CardanoWalletConnect = dynamic(
+  () => import('../../components/Cardano/CardanoWalletConnect'),
+  { ssr: false }
+);
 
 export default function TxBuilder() {
   const [blockchain, setBlockchain] = useState('Polkadot');

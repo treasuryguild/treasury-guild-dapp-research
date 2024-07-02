@@ -12,6 +12,8 @@ const CardanoWalletConnect: React.FC = () => {
   const { txData, setTxData } = useTxData();
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null); // State to hold the selected account
   const [status, setStatus] = useState<string>('Not connected');
+  const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
+  const [walletAddress, setWalletAddress] = useState<string>('');
   
   async function getAssets() {
     if (wallet) {
@@ -22,32 +24,24 @@ const CardanoWalletConnect: React.FC = () => {
     }
   }
 
+  useEffect(() => {
+    if (connected) {
+      assignTokens()
+    } else {setTokens([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}]);}
+  }, [connected]);
+
+  async function assignTokens() {
+    const usedAddresses = await wallet.getUsedAddresses();
+    setWalletAddress(usedAddresses[0]);
+  }
+  
+  console.log( wallet);
   return (
     <div>
       <CardanoWallet />
       {connected && (
-        <>
-          {assets ? (
-            <pre>
-              <code className="language-js">
-                {JSON.stringify(assets, null, 2)}
-              </code>
-            </pre>
-          ) : (
-            <button
-              type="button"
-              onClick={() => getAssets()}
-              disabled={loading}
-              style={{
-                margin: "8px",
-                backgroundColor: loading ? "orange" : "grey",
-              }}
-            >
-              Get Wallet Assets
-            </button>
+            <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" />
           )}
-        </>
-      )}
     </div>
   );
 };

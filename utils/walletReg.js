@@ -1,5 +1,5 @@
-// utils/supabaseUtils.js
-import { supabaseAnon } from '../../lib/supabaseClient';
+// utils/walletReg.js
+import { supabaseAnon } from '../lib/supabaseClient';
 
 export const checkWalletExists = async (walletAddress, blockchain) => {
   const { data, error } = await supabaseAnon
@@ -88,4 +88,33 @@ export const addWalletToProject = async (projectId, walletAddress, blockchain) =
   if (error) {
     console.error('Error adding wallet to project:', error);
   }
+};
+
+export const getAllGroups = async () => {
+  const { data, error } = await supabaseAnon
+    .from('groups')
+    .select('*')
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching groups:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const getProjectsByGroup = async (groupId) => {
+  const { data, error } = await supabaseAnon
+    .from('projects')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching projects for group:', error);
+    return [];
+  }
+
+  return data;
 };

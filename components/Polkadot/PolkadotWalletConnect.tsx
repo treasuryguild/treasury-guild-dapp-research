@@ -1,4 +1,4 @@
-// components/PolkadotWalletConnect.tsx
+// ../components/Polkadot/PolkadotWalletConnect.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
@@ -11,10 +11,14 @@ import { updateTokensTable } from '../../utils/updateTokensTable';
 import { PROVIDERS } from '../../constants/providers';
 import styles from '../../styles/PolkadotWalletConnect.module.css';
 
-const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => void }> = ({ onBalanceLoaded }) => {
+const PolkadotWalletConnect: React.FC<{ 
+  onBalanceLoaded: (loaded: boolean) => void,
+  isConnected: boolean,
+  onConnectionChange: (connected: boolean) => void
+}> = ({ onBalanceLoaded, isConnected, onConnectionChange }) => {
   const [accounts, setAccounts] = useState<InjectedAccountWithMeta[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>('Not connected');
+  const [status, setStatus] = useState<string>(isConnected ? 'Connected' : 'Not connected');
   const [api, setApi] = useState<ApiPromise | null>(null);
   const { txData, setTxData } = useTxData();
   const [selectedProvider, setSelectedProvider] = useState(PROVIDERS[0].url);
@@ -24,6 +28,12 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   const [tokens, setTokens] = useState([]);
   const walletStatusChecked = useRef<{ [key: string]: boolean }>({});
   const [balanceLoaded, setBalanceLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isConnected) {
+      checkForWalletConnection();
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -62,12 +72,6 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   };
 
   const checkForWalletConnection = async () => {
-    const isDisconnected = localStorage.getItem('isWalletDisconnected') === 'true';
-    if (isDisconnected) {
-      setStatus('Not connected');
-      return;
-    }
-
     const accounts = await enableAndFetchAccounts();
     if (accounts) {
       setAccounts(accounts);
@@ -86,8 +90,10 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
           wallet: accounts[0].address,
         }));
       }
+      onConnectionChange(true);
     } else {
       setStatus('Not connected');
+      onConnectionChange(false);
     }
   };
 
@@ -178,9 +184,10 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
         ...prevTxData,
         wallet: accounts[0].address
       }));
-      localStorage.removeItem('isWalletDisconnected');
+      onConnectionChange(true);
     } else {
       setStatus('No extension found or access denied');
+      onConnectionChange(false);
     }
   };
 
@@ -192,7 +199,7 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
       wallet: '',
     }));
     setStatus('Not connected');
-    localStorage.setItem('isWalletDisconnected', 'true');
+    onConnectionChange(false);
     localStorage.removeItem('selectedAccount');
   };
 
@@ -209,7 +216,7 @@ const PolkadotWalletConnect: React.FC<{ onBalanceLoaded: (loaded: boolean) => vo
   return (
     <div className={styles.container}>
       <div className={styles.connectionButtons}>
-        {status !== 'Connected' ? (
+        {!isConnected ? (
           <button className={styles.button} onClick={connectPolkadotWallet}>Connect Polkadot Wallet</button>
         ) : (
           <>

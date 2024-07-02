@@ -29,10 +29,7 @@ export default function CsvUploadForm({ onSubmit, tokens }: CsvUploadFormProps) 
     <div>
       <h2>CSV Upload Contribution Form</h2>
       <form onSubmit={handleSubmit}>
-        <label>
-          CSV File:
-          <input type="file" accept=".csv" onChange={handleFileChange} required />
-        </label>
+        <input type="file" accept=".csv" onChange={handleFileChange} required />
         <button type="submit">Submit</button>
       </form>
     </div>

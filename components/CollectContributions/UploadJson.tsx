@@ -27,10 +27,13 @@ const UploadJson: React.FC<UploadJsonProps> = ({ onSubmit, tokens }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input type="file" accept=".json" onChange={handleFileChange} />
-      <button type="submit">Upload JSON</button>
-    </form>
+    <div>
+      <h2>Json Upload Contribution Form</h2>
+      <form onSubmit={handleSubmit}>
+        <input type="file" accept=".json" onChange={handleFileChange} />
+        <button type="submit">Submit</button>
+      </form>
+    </div>
   );
 };
 

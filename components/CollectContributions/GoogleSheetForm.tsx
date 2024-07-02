@@ -13,7 +13,7 @@ export default function GoogleSheetForm({ onSubmit, tokens }: GoogleSheetFormPro
     e.preventDefault();
     // Implement the logic to fetch contributions from the Google Sheet URL
     // and pass them to the onSubmit callback
-    // ...
+    console.log("sheetUrl", sheetUrl);
     onSubmit({/* contributions */});
   };
 

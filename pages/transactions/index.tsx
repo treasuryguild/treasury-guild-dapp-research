@@ -17,7 +17,8 @@ export default function Transactions() {
   const [blockchain, setBlockchain] = useState('Polkadot');
   const { txData, setTxData } = useTxData();
   const [wsProvider, setWsProvider] = useState('');
-  const [balanceLoaded, setBalanceLoaded] = useState(false);
+  const [polkadotBalanceLoaded, setPolkadotBalanceLoaded] = useState(false);
+  const [polkadotWalletConnected, setPolkadotWalletConnected] = useState(false);
 
   useEffect(() => {
     const updateProvider = async () => {
@@ -29,7 +30,16 @@ export default function Transactions() {
       setWsProvider(provider);
     };
     updateProvider();
+
+    // Check local storage for Polkadot wallet connection status on component mount
+    const polkadotConnected = localStorage.getItem('polkadotWalletConnected') === 'true';
+    setPolkadotWalletConnected(polkadotConnected);
   }, [txData.provider]);
+
+  const handlePolkadotWalletConnection = (connected: any) => {
+    setPolkadotWalletConnected(connected);
+    localStorage.setItem('polkadotWalletConnected', connected.toString());
+  };
 
   return (
     <TxLayout blockchain={blockchain}>
@@ -41,8 +51,12 @@ export default function Transactions() {
         <div className={styles.content}>
           {blockchain === 'Polkadot' ? (
             <>
-              <PolkadotWalletConnect onBalanceLoaded={setBalanceLoaded} />
-              {balanceLoaded && <PolkadotTransactions />}
+              <PolkadotWalletConnect 
+                onBalanceLoaded={setPolkadotBalanceLoaded}
+                isConnected={polkadotWalletConnected}
+                onConnectionChange={handlePolkadotWalletConnection}
+              />
+              {polkadotBalanceLoaded && polkadotWalletConnected && <PolkadotTransactions />}
             </>
           ) : (
             <>

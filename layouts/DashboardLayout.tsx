@@ -2,17 +2,17 @@ import React from 'react';
 import RootLayout from './RootLayout';
 import styles from '../styles/Layouts.module.css';
 
-interface TxLayoutProps {
+interface DashboardLayoutProps {
   children: React.ReactNode;
   blockchain?: string;
 }
 
-export default function TxLayout({ children, blockchain }: TxLayoutProps) {
+export default function TxLayout({ children, blockchain }: DashboardLayoutProps) {
   return (
-    <RootLayout title="Transactions" description="View all transactions">
+    <RootLayout title="Dashboard" description="View project dashboard">
       <header className={styles.header}>
         <h1 className={styles.title}>
-          Transactions{blockchain ? ` - ${blockchain}` : ''}
+          Dashboard{blockchain ? ` - ${blockchain}` : ''}
         </h1>
       </header>
       <main>{children}</main>

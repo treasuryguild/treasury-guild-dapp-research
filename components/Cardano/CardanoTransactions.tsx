@@ -30,7 +30,9 @@ export default function CardanoTransactions() {
     }]
   return (
     <>
-      <ContributionForm onSubmit={handleContributionSubmit} tokens={tokens}/>
+      <div>
+        Cardano Transactions
+      </div>
 
     </>
   );

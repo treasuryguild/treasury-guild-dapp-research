@@ -232,11 +232,9 @@ const PolkadotWalletConnect: React.FC<{
                 </option>
               ))}
             </select>
-            <button className={styles.button} onClick={disconnectPolkadotWallet}>Disconnect Polkadot Wallet</button>
           </>
         )}
       </div>
-      <p className={styles.status}>Status: {status}</p>
       {accounts.length > 0 && (
         <div className={styles.accountInfo}>
           {selectedAccount && (

@@ -24,8 +24,7 @@ const CardanoWalletConnect = dynamic(
   { ssr: false }
 );
 
-export default function TxBuilder() {
-  const [blockchain, setBlockchain] = useState('Polkadot');
+export default function TxBuilder({ selectedBlockchain }: { selectedBlockchain: string }) {
   const [polkadotBalanceLoaded, setPolkadotBalanceLoaded] = useState(false);
   const [polkadotWalletConnected, setPolkadotWalletConnected] = useState(false);
 
@@ -35,20 +34,16 @@ export default function TxBuilder() {
     setPolkadotWalletConnected(polkadotConnected);
   }, []);
 
-  const handlePolkadotWalletConnection = (connected: any) => {
+  const handlePolkadotWalletConnection = (connected: boolean) => {
     setPolkadotWalletConnected(connected);
     localStorage.setItem('polkadotWalletConnected', connected.toString());
   };
 
   return (
-    <TxBuilderLayout blockchain={blockchain}>
+    <TxBuilderLayout blockchain={selectedBlockchain}>
       <div className={styles.container}>
-        <div className={styles.buttonContainer}>
-          <button className={styles.button} onClick={() => setBlockchain('Polkadot')}>Polkadot</button>
-          <button className={styles.button} onClick={() => setBlockchain('Cardano')}>Cardano</button>
-        </div>
         <div className={styles.content}>
-          {blockchain === 'Polkadot' ? (
+          {selectedBlockchain === 'Polkadot' ? (
             <>
               <PolkadotWalletConnect 
                 onBalanceLoaded={setPolkadotBalanceLoaded} 

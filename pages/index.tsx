@@ -24,13 +24,9 @@ const Home: NextPage = () => {
                     <h2>Create a Transaction &rarr;</h2>
                     <p>Submit a new transaction to the blockchain</p>
                 </Link>
-                <Link href="/transactions" className={styles.card}>             
-                    <h2>View Transactions &rarr;</h2>
-                    <p>View all transactions submitted by your project</p>           
-                </Link>
-                <Link href="/wallet" className={styles.card}>               
-                    <h2>View Wallet &rarr;</h2>
-                    <p>{`View your project's wallet balance`}</p>
+                <Link href="/dashboard" className={styles.card}>             
+                    <h2>View Dashboard &rarr;</h2>
+                    <p>View dashboard for your connected wallets or public projects</p>           
                 </Link>
             </div>
         </div>

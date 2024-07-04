@@ -1,24 +1,24 @@
 import Link from 'next/link';
-import React, { useState, useEffect } from "react";
-import { Session } from "@supabase/supabase-js";
-import { useRouter } from 'next/router';
+import React from "react";
 import styles from '../styles/Nav.module.css';
+import BlockchainSelector from './BlockchainSelector';
 
-const Nav = () => {
-  const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-
+const Nav = ({ selectedBlockchain, onBlockchainChange }: any) => {
   return (
     <nav className={styles.routes}>
-          <Link href="/" className={styles.navitems}>
-            Home
-          </Link>
-          <Link href='/txbuilder' className={styles.navitems}>
-            Build Transaction
-          </Link>
-          <Link href='/transactions' className={styles.navitems}>
-            Transaction History
-          </Link>
+      <Link href="/" className={styles.navitems}>
+        Home
+      </Link>
+      <Link href='/txbuilder' className={styles.navitems}>
+        Build Transaction
+      </Link>
+      <Link href='/dashboard' className={styles.navitems}>
+        Dashboard
+      </Link>
+      <BlockchainSelector
+        selectedBlockchain={selectedBlockchain}
+        onBlockchainChange={onBlockchainChange}
+      />
     </nav>
   );
 };

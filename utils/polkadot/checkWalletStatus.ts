@@ -16,17 +16,17 @@ async function getProjectIdByAddress(address: any) {
     }
   
     return data ? data.project_id : null;
-  }
+}
 
-  function formatDate(timestamp: any) {
+function formatDate(timestamp: any) {
     const date = new Date(timestamp);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
+}
 
-  async function getExistingTransactionHashes() {
+async function getExistingTransactionHashes() {
     const { data: transactions, error: transactionsError } = await supabaseAnon
         .from('transactions')
         .select('hash');
@@ -169,17 +169,23 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
 
                     try {
                         if (jsonData.project_id) {
-                            const existingHash = await supabaseAnon
+                            const { data, error } = await supabaseAnon
                                 .from('pending_transactions')
-                                .select('hash')
-                                .eq('hash', jsonData.transactionHash)
-                                .single();
-                    
-                            if (!existingHash.data) {
-                                const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData, hash: jsonData.transactionHash}]);
-                                console.log('Transaction details sent to Supabase successfully:', jsonData);
+                                .upsert(
+                                    { 
+                                        hash: jsonData.transactionHash, 
+                                        json_data: jsonData 
+                                    },
+                                    { 
+                                        onConflict: 'hash',
+                                        ignoreDuplicates: true 
+                                    }
+                                );
+
+                            if (error) {
+                                console.error('Error upserting transaction:', error);
                             } else {
-                                console.log('Transaction already exists in pending_transactions:', jsonData.transactionHash);
+                                console.log('Transaction upserted successfully:', jsonData.transactionHash);
                             }
                         }
                     } catch (error) {

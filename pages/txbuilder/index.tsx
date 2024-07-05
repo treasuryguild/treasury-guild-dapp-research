@@ -1,4 +1,4 @@
-// ../pages/txbuilder/index.tsx
+// pages/txbuilder/index.tsx
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import TxBuilderLayout from '../../layouts/TxBuilderLayout';
@@ -24,20 +24,8 @@ const CardanoWalletConnect = dynamic(
   { ssr: false }
 );
 
-export default function TxBuilder({ selectedBlockchain }: { selectedBlockchain: string }) {
+export default function TxBuilder({ selectedBlockchain, polkadotWalletConnected, onPolkadotWalletConnection }: { selectedBlockchain: string, polkadotWalletConnected: boolean, onPolkadotWalletConnection: (connected: boolean) => void }) {
   const [polkadotBalanceLoaded, setPolkadotBalanceLoaded] = useState(false);
-  const [polkadotWalletConnected, setPolkadotWalletConnected] = useState(false);
-
-  useEffect(() => {
-    // Check local storage for Polkadot wallet connection status on component mount
-    const polkadotConnected = localStorage.getItem('polkadotWalletConnected') === 'true';
-    setPolkadotWalletConnected(polkadotConnected);
-  }, []);
-
-  const handlePolkadotWalletConnection = (connected: boolean) => {
-    setPolkadotWalletConnected(connected);
-    localStorage.setItem('polkadotWalletConnected', connected.toString());
-  };
 
   return (
     <TxBuilderLayout blockchain={selectedBlockchain}>
@@ -48,7 +36,7 @@ export default function TxBuilder({ selectedBlockchain }: { selectedBlockchain: 
               <PolkadotWalletConnect 
                 onBalanceLoaded={setPolkadotBalanceLoaded} 
                 isConnected={polkadotWalletConnected}
-                onConnectionChange={handlePolkadotWalletConnection}
+                onConnectionChange={onPolkadotWalletConnection}
               />
               {polkadotBalanceLoaded && polkadotWalletConnected && <PolkadotTxBuilder />}
             </>

@@ -151,9 +151,7 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
   if (project) {
     return (
       <div>
-        <h3>Project Details</h3>
-        <p>Group Name: {project.groups?.name || 'Unknown Group'}</p>
-        <p>Project Name: {project.name}</p>
+        <h3>{project.groups?.name || 'Unknown Group'} - {project.name}</h3>
       </div>
     );
   }

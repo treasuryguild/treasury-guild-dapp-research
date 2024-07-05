@@ -1,26 +1,30 @@
 // ../components/WalletDashboard.tsx
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import PolkadotTransactions from '../components/Polkadot/PolkadotTransactions';
-import CardanoTransactions from '../components/Cardano/CardanoTransactions';
-import CardanoWalletConnect from '../components/Cardano/CardanoWalletConnect';
+import PolkadotTransactions from './Polkadot/PolkadotTransactions';
+import CardanoTransactions from './Cardano/CardanoTransactions';
+import CardanoWalletConnect from './Cardano/CardanoWalletConnect';
 import { useTxData } from '../context/TxDataContext';
 import styles from '../styles/Dashboard.module.css';
 
 const PolkadotWalletConnect = dynamic(
-  () => import('../components/Polkadot/PolkadotWalletConnect'),
+  () => import('./Polkadot/PolkadotWalletConnect'),
   { ssr: false }
 );
 
 interface WalletDashboardProps {
-  blockchain: string;
+  selectedBlockchain: string;
+  polkadotWalletConnected: boolean;
+  onPolkadotWalletConnection: (connected: boolean) => void;
 }
 
-const WalletDashboard: React.FC<WalletDashboardProps> = ({ blockchain }) => {
+const WalletDashboard: React.FC<WalletDashboardProps> = ({
+  selectedBlockchain,
+  polkadotWalletConnected,
+  onPolkadotWalletConnection
+}) => {
   const { txData } = useTxData();
-  const [wsProvider, setWsProvider] = useState('');
   const [polkadotBalanceLoaded, setPolkadotBalanceLoaded] = useState(false);
-  const [polkadotWalletConnected, setPolkadotWalletConnected] = useState(false);
 
   useEffect(() => {
     const updateProvider = async () => {
@@ -29,29 +33,21 @@ const WalletDashboard: React.FC<WalletDashboardProps> = ({ blockchain }) => {
         console.error('Provider not found in txData');
         return;
       }
-      setWsProvider(provider);
+      // You might want to use this provider information if needed
+      console.log('Current provider:', provider);
     };
     updateProvider();
-
-    // Check local storage for Polkadot wallet connection status on component mount
-    const polkadotConnected = localStorage.getItem('polkadotWalletConnected') === 'true';
-    setPolkadotWalletConnected(polkadotConnected);
   }, [txData.provider]);
-
-  const handlePolkadotWalletConnection = (connected: boolean) => {
-    setPolkadotWalletConnected(connected);
-    localStorage.setItem('polkadotWalletConnected', connected.toString());
-  };
 
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        {blockchain === 'Polkadot' ? (
+        {selectedBlockchain === 'Polkadot' ? (
           <>
             <PolkadotWalletConnect 
               onBalanceLoaded={setPolkadotBalanceLoaded}
               isConnected={polkadotWalletConnected}
-              onConnectionChange={handlePolkadotWalletConnection}
+              onConnectionChange={onPolkadotWalletConnection}
             />
             {polkadotBalanceLoaded && polkadotWalletConnected && <PolkadotTransactions />}
           </>

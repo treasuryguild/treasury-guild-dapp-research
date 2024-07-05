@@ -1,6 +1,7 @@
+// pages/_app.tsx
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Nav from '../components/nav';
 import { TxDataProvider } from '../context/TxDataContext';
 import RootLayout from '../layouts/RootLayout';
@@ -8,6 +9,17 @@ import { MeshProvider } from "@meshsdk/react";
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [selectedBlockchain, setSelectedBlockchain] = useState('Polkadot');
+  const [polkadotWalletConnected, setPolkadotWalletConnected] = useState(false);
+
+  useEffect(() => {
+    const storedConnection = localStorage.getItem('polkadotWalletConnected');
+    setPolkadotWalletConnected(storedConnection === 'true');
+  }, []);
+
+  const handlePolkadotWalletConnection = (connected: boolean) => {
+    setPolkadotWalletConnected(connected);
+    localStorage.setItem('polkadotWalletConnected', connected.toString());
+  };
 
   return (
     <RootLayout 
@@ -20,10 +32,17 @@ function MyApp({ Component, pageProps }: AppProps) {
               <Nav 
                 selectedBlockchain={selectedBlockchain}
                 onBlockchainChange={setSelectedBlockchain}
+                polkadotWalletConnected={polkadotWalletConnected}
+                onPolkadotWalletConnection={handlePolkadotWalletConnection}
               />
             </div>
             <div className="component">
-              <Component {...pageProps} selectedBlockchain={selectedBlockchain} />
+              <Component 
+                {...pageProps} 
+                selectedBlockchain={selectedBlockchain} 
+                polkadotWalletConnected={polkadotWalletConnected}
+                onPolkadotWalletConnection={handlePolkadotWalletConnection}
+              />
             </div>
           </div>
         </TxDataProvider>

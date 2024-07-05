@@ -17,6 +17,23 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #2a2fba;
+  color: white;
+}
+
+.button:active {
+  background-color: #1a1a1a;
+  border: 1px solid #ccc;
+}
+
+.button.active {
+  background-color: #1a1a1a;
+  border: 1px solid #5459dc;
+  color: #5459dc;
 }
 
 .content {

@@ -1,3 +1,4 @@
+// ../services/githubApi.ts
 import { graphql } from "@octokit/graphql";
 
 const GITHUB_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN;
@@ -26,7 +27,7 @@ export async function fetchProjectBoardDetails(url: string, projectNumber: strin
         repository(owner: $owner, name: $repo) {
           projectV2(number: $projectNumber) {
             title
-            fields(first: 10) {
+            fields(first: 20) {
               nodes {
                 ... on ProjectV2FieldCommon {
                   name
@@ -44,11 +45,17 @@ export async function fetchProjectBoardDetails(url: string, projectNumber: strin
                     milestone {
                       title
                     }
-                    labels(first: 5) {
+                    labels(first: 10) {
                       nodes {
                         name
                       }
                     }
+                    assignees(first: 30) {
+                      nodes {
+                        login
+                      }
+                    }
+                    state
                   }
                 }
                 fieldValues(first: 10) {
@@ -109,7 +116,7 @@ export async function fetchProjectBoardDetails(url: string, projectNumber: strin
         projectNumber: parseInt(projectNumber, 10),
       });
 
-      return data.repository.projectV2;
+      return processProjectData(data.repository.projectV2);
     } catch (error) {
       console.error("Error fetching project board details:", error);
       throw error;
@@ -121,7 +128,7 @@ export async function fetchProjectBoardDetails(url: string, projectNumber: strin
         organization(login: $orgName) {
           projectV2(number: $projectNumber) {
             title
-            fields(first: 10) {
+            fields(first: 20) {
               nodes {
                 ... on ProjectV2FieldCommon {
                   name
@@ -139,11 +146,17 @@ export async function fetchProjectBoardDetails(url: string, projectNumber: strin
                     milestone {
                       title
                     }
-                    labels(first: 5) {
+                    labels(first: 10) {
                       nodes {
                         name
                       }
                     }
+                    assignees(first: 30) {
+                      nodes {
+                        login
+                      }
+                    }
+                    state
                   }
                 }
                 fieldValues(first: 10) {
@@ -203,10 +216,35 @@ export async function fetchProjectBoardDetails(url: string, projectNumber: strin
         projectNumber: parseInt(projectNumber, 10),
       });
 
-      return data.organization.projectV2;
+      return processProjectData(data.organization.projectV2);
     } catch (error) {
       console.error("Error fetching project board details:", error);
       throw error;
     }
   }
+}
+
+// Helper function to process project data
+function processProjectData(project: any) {
+  const { fields, items } = project;
+  const processedItems = items.nodes.map((item: any) => {
+    const fieldValuesMap = item.fieldValues.nodes.reduce((acc: any, fieldValue: any) => {
+      const fieldName = fieldValue?.field?.name;
+      if (fieldName) {
+        acc[fieldName] = fieldValue;
+      }
+      return acc;
+    }, {});
+
+    return {
+      ...item.content,
+      fieldValues: fieldValuesMap,
+    };
+  });
+
+  return {
+    title: project.title,
+    fields: fields.nodes,
+    items: processedItems,
+  };
 }

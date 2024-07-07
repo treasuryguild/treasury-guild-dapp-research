@@ -1,8 +1,10 @@
 // components/GitHubProjectBoardForm.tsx
 import React, { useState, useEffect } from 'react';
-import { fetchProjectBoardDetails } from '../../services/githubApi'; // Adjust the path as necessary
+import { fetchProjectBoardDetails } from '../../services/githubApi';
 import { useTxData } from '../../context/TxDataContext';
 import { supabaseAnon } from '../../lib/supabaseClient';
+import styles from '../../styles/GitHubProjectBoardForm.module.css';
+import CustomizableProjectTable from './CustomizableProjectTable';
 
 interface GitHubProjectBoardFormProps {
   onSubmit: (contributions: any) => void;
@@ -17,12 +19,22 @@ interface Project {
   project_settings: any;
 }
 
+interface ProjectDetails {
+  items: any[];
+  fields: any[];
+  title: string;
+  // Add other properties as needed
+}
+
 export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProjectBoardFormProps) {
   const [repoUrl, setRepoUrl] = useState('');
   const [projectNumber, setProjectNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [project, setProject] = useState<Project | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState('');
+  const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(null);
   const { txData, setTxData } = useTxData();
 
   useEffect(() => {
@@ -36,7 +48,6 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
       if (error) {
         setError('Failed to fetch project from database');
       } else {
-        // Ensure project_settings is an object and initialize boards array if not present
         const projectData = {
           ...data,
           project_settings: data.project_settings || { boards: [] },
@@ -53,10 +64,14 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
 
   const handleFetchProjectDetails = async (board: any) => {
     try {
-      const projectDetails = await fetchProjectBoardDetails(board.repoUrl, board.projectNumber);
-      onSubmit(projectDetails);
+      setLoading(true);
+      const details = await fetchProjectBoardDetails(board.repoUrl, board.projectNumber);
+      setProjectDetails(details);
+      onSubmit(details);
     } catch (err) {
       setError('Failed to fetch project board details');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,7 +89,6 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
       };
 
       if (project) {
-        // Update existing project settings
         const updatedSettings = {
           ...project.project_settings,
           boards: [...(project.project_settings.boards || []), newBoard],
@@ -91,7 +105,6 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
 
         setProject({ ...project, project_settings: updatedSettings });
       } else {
-        // Insert new project (unlikely scenario based on your description)
         const { data, error }: any = await supabaseAnon.from('projects').insert([
           {
             name: `Project Board ${projectNumber}`,
@@ -108,6 +121,9 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
       }
 
       onSubmit(projectDetails);
+      setShowForm(false);
+      setRepoUrl('');
+      setProjectNumber('');
     } catch (err) {
       setError('Failed to fetch project board details');
     } finally {
@@ -115,44 +131,86 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
     }
   };
 
+  const handleBoardSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedIndex = parseInt(e.target.value);
+    setSelectedBoard(e.target.value);
+    if (selectedIndex >= 0 && project && project.project_settings.boards) {
+      const board = project.project_settings.boards[selectedIndex];
+      if (board) {
+        handleFetchProjectDetails(board);
+      }
+    }
+  };
+
   return (
-    <div>
-      <h2>GitHub Project Board Contribution Form</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          GitHub Repository or Organization URL:
-          <input
-            type="text"
-            value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Project Number:
-          <input
-            type="text"
-            value={projectNumber}
-            onChange={(e) => setProjectNumber(e.target.value)}
-            required
-          />
-        </label>
-        <button type="submit" disabled={loading}>
-          {loading ? 'Fetching...' : 'Submit'}
+    <div className={styles.container}>  
+      <div className={styles.boardSelection}>
+        <select 
+          value={selectedBoard} 
+          onChange={handleBoardSelect}
+          className={styles.dropdown}
+        >
+          <option value="">Select a project board</option>
+          {project && project.project_settings.boards?.map((board: any, index: number) => (
+            <option key={index} value={index}>
+              {board.title ? board.title : `Board ${index + 1}`}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => setShowForm(true)}
+          className={`${styles.button} ${styles.addButton}`}
+        >
+          Add New Project Board
         </button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <h3>Existing Project Boards</h3>
-      <div>
-        {project && project.project_settings.boards?.map((board: any, index: number) => (
-          <button
-            key={index}
-            onClick={() => handleFetchProjectDetails(board)}
-          >
-            {board.title ? board.title : `Board ${index + 1}`}
-          </button>
-        ))}
       </div>
+
+      {showForm && (
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="repoUrl" className={styles.label}>
+              GitHub Repository or Organization URL:
+            </label>
+            <input
+              id="repoUrl"
+              type="text"
+              value={repoUrl}
+              onChange={(e) => setRepoUrl(e.target.value)}
+              required
+              className={styles.input}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="projectNumber" className={styles.label}>
+              Project Number:
+            </label>
+            <input
+              id="projectNumber"
+              type="text"
+              value={projectNumber}
+              onChange={(e) => setProjectNumber(e.target.value)}
+              required
+              className={styles.input}
+            />
+          </div>
+          <div className={styles.buttonGroup}>
+            <button type="submit" disabled={loading} className={styles.submitButton}>
+              {loading ? 'Adding...' : 'Add Project Board'}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)} className={styles.cancelButton}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+      
+      {error && <p className={styles.error}>{error}</p>}
+      {loading && <p className={styles.loading}>Loading...</p>}
+      {projectDetails && (
+        <div className={styles.tableContainer}>
+          <CustomizableProjectTable projectDetails={projectDetails} />
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import UploadJson from './UploadJson';
 import GoogleSheetForm from './GoogleSheetForm';
 import GitHubProjectBoardForm from './GitHubProjectBoardForm';
 import CsvUploadForm from './CsvUploadForm';
+import styles from '../../styles/ContFormOptions.module.css';
 
 interface Contribution {
   name: string;
@@ -27,25 +28,54 @@ export default function ContributionFormOptions({ onContributionSubmit, tokens }
   const [activeForm, setActiveForm] = useState('contribution');
 
   return (
-    <>
-      <div>
-        <button onClick={() => setActiveForm('contribution')}>Contribution Form</button>
-        <button onClick={() => setActiveForm('googleSheet')}>Google Sheet</button>
-        <button onClick={() => setActiveForm('githubProjectBoard')}>GitHub Project Board</button>
-        <button onClick={() => setActiveForm('csvUpload')}>CSV Upload</button>
-        <button onClick={() => setActiveForm('uploadJson')}>Upload JSON</button>
+    <div className={styles.container}>
+      <div className={styles.buttonWrapper}>
+        <div className={styles.buttonContainer}>
+          <button
+            onClick={() => setActiveForm('contribution')}
+            className={`${styles.button} ${activeForm === 'contribution' ? styles.active : ''}`}
+          >
+            Contribution Form
+          </button>
+          <button
+            onClick={() => setActiveForm('googleSheet')}
+            className={`${styles.button} ${activeForm === 'googleSheet' ? styles.active : ''}`}
+          >
+            Google Sheet
+          </button>
+          <button
+            onClick={() => setActiveForm('githubProjectBoard')}
+            className={`${styles.button} ${activeForm === 'githubProjectBoard' ? styles.active : ''}`}
+          >
+            GitHub Project Board
+          </button>
+          <button
+            onClick={() => setActiveForm('csvUpload')}
+            className={`${styles.button} ${activeForm === 'csvUpload' ? styles.active : ''}`}
+          >
+            CSV Upload
+          </button>
+          <button
+            onClick={() => setActiveForm('uploadJson')}
+            className={`${styles.button} ${activeForm === 'uploadJson' ? styles.active : ''}`}
+          >
+            Upload JSON
+          </button>
+        </div>
       </div>
-      {activeForm === 'contribution' ? (
-        <ContributionForm onSubmit={onContributionSubmit} tokens={tokens} />
-      ) : activeForm === 'googleSheet' ? (
-        <GoogleSheetForm onSubmit={onContributionSubmit} tokens={tokens} />
-      ) : activeForm === 'githubProjectBoard' ? (
-        <GitHubProjectBoardForm onSubmit={onContributionSubmit} tokens={tokens} />
-      ) : activeForm === 'csvUpload' ? (
-        <CsvUploadForm onSubmit={onContributionSubmit} tokens={tokens} />
-      ) : activeForm === 'uploadJson' ? (
-        <UploadJson onSubmit={onContributionSubmit} tokens={tokens} />
-      ) : null}
-    </>
+      <div className={styles.formContainer}>
+        {activeForm === 'contribution' ? (
+          <ContributionForm onSubmit={onContributionSubmit} tokens={tokens} />
+        ) : activeForm === 'googleSheet' ? (
+          <GoogleSheetForm onSubmit={onContributionSubmit} tokens={tokens} />
+        ) : activeForm === 'githubProjectBoard' ? (
+          <GitHubProjectBoardForm onSubmit={onContributionSubmit} tokens={tokens} />
+        ) : activeForm === 'csvUpload' ? (
+          <CsvUploadForm onSubmit={onContributionSubmit} tokens={tokens} />
+        ) : activeForm === 'uploadJson' ? (
+          <UploadJson onSubmit={onContributionSubmit} tokens={tokens} />
+        ) : null}
+      </div>
+    </div>
   );
 }

@@ -22,10 +22,12 @@ interface Contribution {
 export default function PolkadotTransactions() {
   const [wsProvider, setWsProvider] = useState('wss://ws.test.azero.dev');
   const { txData, setTxData } = useTxData();
-  const [balance, setBalance] = useState('');
+  const [walletBalance, setWalletBalance] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [api, setApi] = useState<ApiPromise | null>(null);
   const [selectedProvider, setSelectedProvider] = useState(PROVIDERS[0].url);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const updateProvider = async () => {
@@ -40,7 +42,7 @@ export default function PolkadotTransactions() {
     const setup = async () => {
       const { provider } = txData;
       setLoading(true);
-      const wsProvider = new WsProvider(provider != '' ? provider : selectedProvider);
+      const wsProvider = new WsProvider(provider !== '' ? provider : selectedProvider);
       const api = await ApiPromise.create({ provider: wsProvider });
       setApi(api);
       setLoading(false);
@@ -51,6 +53,7 @@ export default function PolkadotTransactions() {
   }, [txData]);
   
   async function fetchTransactionDetails(address: string) {
+    console.log('Fetching transaction details for address:', address);
     const selectedProviderName = PROVIDERS.find((provider) => provider.url === selectedProvider)?.name || '';
     const subscanUrl = SUBSCAN_URLS.find((subscan) => subscan.name === selectedProviderName)?.url || '';
 
@@ -89,37 +92,72 @@ export default function PolkadotTransactions() {
   }
 
   const fetchBalance = async () => {
-    const provider = new WsProvider(wsProvider);
-    const api = await ApiPromise.create({ provider });
-    const decimals = api.registry.chainDecimals[0];
-    const test = api.query.system.events()
-    console.log('Test:', test);
-    
-    const storedAccount = localStorage.getItem('selectedAccount');
-    if (!api || !storedAccount) {
-      setBalance('');
-      return;
-    }
-
-    api.query.system.account(
-      storedAccount,
-      ({ data: { free: balance } }: { data: { free: any } }) => {
-        const balanceInPlanck = balance.toBigInt();
-        const balanceInDOT = balanceInPlanck;
-        const finalBalance = Number(balanceInDOT) / 10 ** decimals;
-        setBalance(finalBalance.toFixed(4));
-        console.log('Balance:', finalBalance);
+    setIsLoading(true);
+    setErrorMessage('');
+    console.log('Starting fetchBalance');
+    try {
+      let provider;
+      try {
+        provider = new WsProvider(wsProvider);
+        console.log('Provider created');
+      } catch (error) {
+        console.error('Error creating WebSocket provider:', error);
+        setErrorMessage('Failed to connect to the network. Please try again later.');
+        return;
       }
-    ); 
 
-    fetchTransactionDetails(storedAccount);
+      const api = await ApiPromise.create({ provider });
+      console.log('API created');
+
+      const decimals = api.registry.chainDecimals[0];
+      console.log('Decimals:', decimals);
+
+      const events = await api.query.system.events();
+      console.log('Events:', events.toHuman());
+
+      const storedAccount = localStorage.getItem('selectedAccount');
+      console.log('Stored account:', storedAccount);
+      if (!storedAccount) {
+        console.error('No account found');
+        setErrorMessage('No account selected. Please select an account first.');
+        return;
+      }
+
+      if (!api) {
+        console.error('API not initialized');
+        setErrorMessage('Failed to initialize the API. Please try again later.');
+        return;
+      }
+
+      const { data: { free: balance } }: any = await api.query.system.account(storedAccount);
+      const balanceInPlanck = balance.toBigInt();
+      const balanceInDOT = balanceInPlanck;
+      const finalBalance = Number(balanceInDOT) / 10 ** decimals;
+      setWalletBalance(finalBalance.toFixed(4));
+      console.log('Balance:', finalBalance);
+
+      const transactions = await fetchTransactionDetails(storedAccount);
+      console.log('Fetched transactions:', transactions);
+    } catch (error) {
+      console.error('Error in fetchBalance:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        setErrorMessage(`An error occurred: ${error.message}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <>
       <div>Txs</div>
-      <button onClick={fetchBalance}>Fetch Balance</button>
-      <p>Balance: {balance}</p>
+      <button onClick={fetchBalance} disabled={isLoading}>
+        {isLoading ? 'Fetching...' : 'Fetch Balance'}
+      </button>
+      <p>Balance: {walletBalance}</p>
+      {errorMessage && <p style={{color: 'red'}}>{errorMessage}</p>}
     </>
   );
 }

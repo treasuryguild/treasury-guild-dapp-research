@@ -83,11 +83,13 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
         }));
       } else {
         console.log('Using first account:', accounts[0].address); // Debug log
-        setSelectedAccount(accounts[0].address);
+        const newSelectedAccount = accounts[0].address;
+        setSelectedAccount(newSelectedAccount);
         setTxData((prevTxData) => ({
           ...prevTxData,
-          wallet: accounts[0].address,
+          wallet: newSelectedAccount,
         }));
+        localStorage.setItem('selectedAccount', newSelectedAccount); // Update localStorage here
       }
       return true;
     } else {
@@ -184,7 +186,13 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
 
   const connectWallet = async () => {
     const connected = await checkForWalletConnection();
-    onConnectionChange(connected);
+    if (connected) {
+      onConnectionChange(true);
+      // Ensure localStorage is updated here as well
+      if (selectedAccount) {
+        localStorage.setItem('selectedAccount', selectedAccount);
+      }
+    }
     return connected;
   };
 

@@ -23,7 +23,7 @@ interface Project {
   id: string;
   name: string;
   group_id: string;
-  groups: Group;  // Changed this to match the actual data structure
+  groups: Group;
   created_at: string;
   updated_at: string;
   project_settings: any | null;
@@ -44,35 +44,46 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
   const { txData, setTxData } = useTxData();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
-      const walletExists = await checkWalletExists(walletAddress, blockchain);
-      if (walletExists) {
-        const projectData = await getProjectByWallet(walletAddress, blockchain);
-        if (projectData && projectData.groups) {
-          setProject(projectData);
-          setTxData((prevTxData) => ({
-            ...prevTxData,
-            project_id: projectData.id,
-            wallet: walletAddress,
-            project: projectData.name,
-            group: projectData.groups.name, // Access group name through projectData.groups
-          }));
+      setError(null);
+      try {
+        const walletExists = await checkWalletExists(walletAddress, blockchain);
+        if (walletExists) {
+          const projectData = await getProjectByWallet(walletAddress, blockchain);
+          if (projectData && projectData.groups) {
+            setProject(projectData);
+            setTxData((prevTxData) => ({
+              ...prevTxData,
+              project_id: projectData.id,
+              wallet: walletAddress,
+              project: projectData.name,
+              group: projectData.groups.name,
+            }));
+          } else {
+            console.error('Project data or group information is missing');
+            setProject(null);
+            setError('Failed to fetch project details. Please try again.');
+          }
         } else {
-          console.error('Project data or group information is missing');
           setProject(null);
+          const fetchedGroups = await getAllGroups();
+          setGroups(fetchedGroups);
         }
-      } else {
-        setProject(null);
-        const fetchedGroups = await getAllGroups();
-        setGroups(fetchedGroups);
+      } catch (err) {
+        console.error('Error fetching initial data:', err);
+        setError('An error occurred while fetching data. Please try again.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchInitialData();
+    if (walletAddress) {
+      fetchInitialData();
+    }
   }, [walletAddress, blockchain]);
 
   useEffect(() => {
@@ -146,6 +157,10 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+  
+  if (error) {
+    return <div>Error: {error}</div>;
   }
 
   if (project) {

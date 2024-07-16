@@ -1,51 +1,54 @@
 // utils/walletReg.js
 import { supabaseAnon } from '../lib/supabaseClient';
 
-export const checkWalletExists = async (walletAddress, blockchain) => {
-  const { data, error } = await supabaseAnon
-    .from('wallets')
-    .select('*')
-    .eq('address', walletAddress)
-    .eq('blockchain', blockchain)
-    .single();
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
-  if (error) {
-    console.error('Error checking wallet existence:', error);
-    return false;
+const retry = async (fn, retries = MAX_RETRIES, delay = RETRY_DELAY) => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retry(fn, retries - 1, delay * 2);
   }
+};
 
-  return !!data;
+export const checkWalletExists = async (walletAddress, blockchain) => {
+  return retry(async () => {
+    const { data, error } = await supabaseAnon
+      .from('wallets')
+      .select('*')
+      .eq('address', walletAddress)
+      .eq('blockchain', blockchain)
+      .single();
+
+    if (error) throw error;
+    return !!data;
+  });
 };
 
 export const getProjectByWallet = async (walletAddress, blockchain) => {
-  const { data, error } = await supabaseAnon
-    .from('wallets')
-    .select('project_id')
-    .eq('address', walletAddress)
-    .eq('blockchain', blockchain)
-    .single();
+  return retry(async () => {
+    const { data: walletData, error: walletError } = await supabaseAnon
+      .from('wallets')
+      .select('project_id')
+      .eq('address', walletAddress)
+      .eq('blockchain', blockchain)
+      .single();
 
-  if (error) {
-    console.error('Error getting project by wallet:', error);
-    return null;
-  }
+    if (walletError) throw walletError;
+    if (!walletData) return null;
 
-  if (!data) {
-    return null;
-  }
+    const { data: projectData, error: projectError } = await supabaseAnon
+      .from('projects')
+      .select('*, groups(*)')
+      .eq('id', walletData.project_id)
+      .single();
 
-  const { data: projectData, error: projectError } = await supabaseAnon
-    .from('projects')
-    .select('*, groups(*)')
-    .eq('id', data.project_id)
-    .single();
-
-  if (projectError) {
-    console.error('Error getting project details:', projectError);
-    return null;
-  }
-
-  return projectData;
+    if (projectError) throw projectError;
+    return projectData;
+  });
 };
 
 export const createGroup = async (groupName) => {

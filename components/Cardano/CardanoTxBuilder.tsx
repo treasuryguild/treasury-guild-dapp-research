@@ -1,4 +1,4 @@
-// components/PolkadotTxBuilder.tsx
+// components/Cardano/CardanoTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import ContributionForms from '../CollectContributions/ContributionFormOptions';
 import { useTxData } from '../../context/TxDataContext';

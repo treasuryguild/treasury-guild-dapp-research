@@ -1,15 +1,10 @@
-// components/PolkadotTxBuilder.tsx
+// components/Cardano/CardanoTransactions.tsx
 import React, { useState, useEffect } from 'react';
-import ContributionForm from '../CollectContributions/ContributionForm';
 import { useTxData } from '../../context/TxDataContext';
 
 export default function CardanoTransactions() {
   const [accountAddress, setAccountAddress] = useState('');
   const { txData, setTxData } = useTxData();
-
-  const handleContributionSubmit = async (contributions: any) => {
-    console.log('Submitting contributions:', contributions);
-  };  
 
   let tokens = [
     { symbol: "ADA", 

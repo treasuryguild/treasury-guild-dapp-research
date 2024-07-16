@@ -1,4 +1,4 @@
-// components/PolkadotTxBuilder.tsx
+// components/Polkadot/PolkadotTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import ContributionFormOptions from '../CollectContributions/ContributionFormOptions';
 import { useTxData } from '../../context/TxDataContext';

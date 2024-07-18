@@ -1,5 +1,5 @@
 // components/Polkadot/PolkadotWalletControls.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePolkadotWallet } from '../../hooks/usePolkadotWallet';
 import styles from '../../styles/PolkadotWalletConnect.module.css';
 
@@ -7,6 +7,7 @@ const PolkadotWalletControls: React.FC<{
   isConnected: boolean,
   onConnectionChange: (connected: boolean) => void
 }> = ({ isConnected, onConnectionChange }) => {
+  const [error, setError] = useState<string | null>(null);
   const {
     connectWallet,
     disconnectWallet,
@@ -15,8 +16,28 @@ const PolkadotWalletControls: React.FC<{
     selectedAccount,
     handleAccountChange,
     accounts,
-    PROVIDERS
+    PROVIDERS,
+    authToken,
+    authenticate,
+    balance,
+    loading
   } = usePolkadotWallet(isConnected, onConnectionChange);
+
+  useEffect(() => {
+    if (isConnected && !authToken) {
+      handleAuthentication();
+    }
+  }, [isConnected, authToken]);
+
+  const handleAuthentication = async () => {
+    try {
+      setError(null);
+      await authenticate();
+    } catch (err) {
+      console.error('Authentication error:', err);
+      setError('Authentication failed. Please try again.');
+    }
+  };
 
   return (
     <div className={styles.walletControls}>
@@ -48,6 +69,12 @@ const PolkadotWalletControls: React.FC<{
               </option>
             ))}
           </select>
+          {authToken ? (
+            <span className={styles.authStatus}>Authenticated</span>
+          ) : (
+            <button className={styles.button} onClick={handleAuthentication}>Authenticate</button>
+          )}
+          {error && <p className={styles.error}>{error}</p>}
         </>
       )}
     </div>

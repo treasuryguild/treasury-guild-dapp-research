@@ -1,54 +1,81 @@
 // components/TransactionTable.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Transaction } from '../utils/fetchTransactions';
+import styles from '../styles/TransactionsTable.module.css';
 
 interface TransactionTableProps {
   transactions: Transaction[];
 }
 
+interface TokenAmount {
+  [tokenSymbol: string]: string;
+}
+
 export default function TransactionTable({ transactions }: TransactionTableProps) {
+  const { tokenColumns, processedTransactions } = useMemo(() => {
+    const tokenSet = new Set<string>();
+    const processedTxs = transactions.map(tx => {
+      const tokenAmounts: TokenAmount = {};
+      
+      tx.data.contributions.forEach(contribution => {
+        contribution.outputs.forEach(output => {
+          output.tokens.forEach(token => {
+            const symbol = token.token.symbol;
+            tokenSet.add(symbol);
+            const amount = Number(token.amount);
+            tokenAmounts[symbol] = (parseFloat(tokenAmounts[symbol] || '0') + amount).toString();
+          });
+        });
+      });
+      
+      return {
+        ...tx,
+        tokenAmounts
+      };
+    });
+
+    return {
+      tokenColumns: Array.from(tokenSet),
+      processedTransactions: processedTxs
+    };
+  }, [transactions]);
+
   return (
-    <table className="min-w-full bg-white">
-      <thead>
-        <tr className="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-          <th className="py-3 px-6 text-left">Direction</th>
-          <th className="py-3 px-6 text-left">Hash</th>
-          <th className="py-3 px-6 text-left">Block Number</th>
-          <th className="py-3 px-6 text-left">From</th>
-          <th className="py-3 px-6 text-left">To</th>
-          <th className="py-3 px-6 text-left">Success</th>
-          <th className="py-3 px-6 text-left">Fee</th>
-          <th className="py-3 px-6 text-left">Type</th>
-          <th className="py-3 px-6 text-left">Date</th>
-        </tr>
-      </thead>
-      <tbody className="text-gray-600 text-sm font-light">
-        {transactions.map((tx) => (
-          <tr key={tx.id} className="border-b border-gray-200 hover:bg-gray-100">
-            <td className="py-3 px-6 text-left">
-              {tx.direction === 'incoming' ? '↓' : '↑'}
-            </td>
-            <td className="py-3 px-6 text-left whitespace-nowrap">
-              {tx.hash.substring(0, 10)}...
-            </td>
-            <td className="py-3 px-6 text-left">{tx.block_number}</td>
-            <td className="py-3 px-6 text-left">
-              {tx.from_address.substring(0, 10)}...
-            </td>
-            <td className="py-3 px-6 text-left">
-              {tx.to_address.substring(0, 10)}...
-            </td>
-            <td className="py-3 px-6 text-left">
-              {tx.success ? 'Yes' : 'No'}
-            </td>
-            <td className="py-3 px-6 text-left">{tx.fee}</td>
-            <td className="py-3 px-6 text-left">{tx.tx_type}</td>
-            <td className="py-3 px-6 text-left">
-              {new Date(tx.created_at).toLocaleDateString()}
-            </td>
+    <div className={styles.tableContainer}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Block Number</th>
+            <th>From</th>
+            <th>To</th>
+            {tokenColumns.map(token => (
+              <th key={token}>{token}</th>
+            ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {processedTransactions.map((tx) => (
+            <tr key={tx.id}>
+              <td>{new Date(tx.created_at).toLocaleDateString()}</td>
+              <td>
+                <span className={tx.direction === 'incoming' ? styles.incomingArrow : styles.outgoingArrow}>
+                  {tx.direction === 'incoming' ? '↓' : '↑'}
+                </span>
+              </td>
+              <td>{tx.block_number}</td>
+              <td>{tx.from_address.substring(0, 10)}...</td>
+              <td>{tx.to_address.substring(0, 10)}...</td>
+              {tokenColumns.map(token => (
+                <td key={token}>
+                  {tx.tokenAmounts[token] ? parseFloat(tx.tokenAmounts[token]).toFixed(2) : '-'}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

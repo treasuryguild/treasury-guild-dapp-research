@@ -3,15 +3,26 @@ import { supabaseAnon } from '../lib/supabaseClient';
 
 export interface Transaction {
   id: string;
-  hash: string;
   block_number: number | null;
   from_address: string;
   to_address: string;
-  success: boolean;
   fee: string;
   tx_type: string;
   created_at: string;
   direction: 'incoming' | 'outgoing';
+  data: {
+    contributions: Array<{
+      outputs: Array<{
+        tokens: Array<{
+          amount: string;
+          token: {
+            symbol: string;
+            decimals: number;
+          }
+        }>
+      }>
+    }>
+  };
 }
 
 export async function fetchAllTransactions(address: string): Promise<Transaction[]> {

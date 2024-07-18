@@ -1,4 +1,6 @@
+// ../context/TxDataContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { PROVIDERS } from '../constants/providers'; // Make sure this path is correct
 
 interface TxData {
   group: string;
@@ -26,7 +28,7 @@ interface TxData {
   send_message: boolean;
   provider: string;
   tokens: { symbol: string, balance: string }[];
-  // other properties of TxData...
+  authToken: string | null;
 }
 
 interface TxDataContextProps {
@@ -42,32 +44,32 @@ interface TxDataProviderProps {
 
 export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
   const [txData, setTxData] = useState<TxData>({ 
-  group: '',
-  project:'',
-  project_id:'',
-  project_website:'',
-  project_type:'',
-  logo_url:'',
-  wallet:'',
-  txHash:'',
-  monthly_budget_balance: {},
-  monthly_wallet_budget_string:'',
-  totalAmountsString:'',
-  txamounts:{},
-  fee:'',
-  totalAmounts:{},
-  walletTokens:{},
-  walletBalanceAfterTx:{},
-  balanceString:'',
-  txdescription:'',
-  formattedDate:'',
-  tokenRates:{},
-  txtype:'',
-  budget_month: new Date().toISOString().slice(0, 7),
-  send_message:true,
-  provider: '',
-  tokens: [],
-   /* initialize other properties as needed */ 
+    group: '',
+    project:'',
+    project_id:'',
+    project_website:'',
+    project_type:'',
+    logo_url:'',
+    wallet:'',
+    txHash:'',
+    monthly_budget_balance: {},
+    monthly_wallet_budget_string:'',
+    totalAmountsString:'',
+    txamounts:{},
+    fee:'',
+    totalAmounts:{},
+    walletTokens:{},
+    walletBalanceAfterTx:{},
+    balanceString:'',
+    txdescription:'',
+    formattedDate:'',
+    tokenRates:{},
+    txtype:'',
+    budget_month: new Date().toISOString().slice(0, 7),
+    send_message:true,
+    provider: PROVIDERS[0].url, // Set the default provider
+    tokens: [],
+    authToken: null,
   });
 
   return (

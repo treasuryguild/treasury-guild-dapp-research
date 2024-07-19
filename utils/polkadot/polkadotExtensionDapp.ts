@@ -1,13 +1,15 @@
+// utils/polkadot/polkadotExtensionDapp.ts
+
 let web3Enable: any;
 let web3Accounts: any;
 
-if (typeof window !== 'undefined') {
-  // Importing the module dynamically only on the client side
-  import('@polkadot/extension-dapp').then((module) => {
-    web3Enable = module.web3Enable;
-    web3Accounts = module.web3Accounts;
-  });
-}
+export const initPolkadotExtension = async () => {
+  if (typeof window !== 'undefined') {
+    const { web3Enable: enable, web3Accounts: accounts } = await import('@polkadot/extension-dapp');
+    web3Enable = enable;
+    web3Accounts = accounts;
+  }
+};
 
 export const enableExtension = async (appName: string) => {
   if (typeof window === 'undefined' || !web3Enable) return;

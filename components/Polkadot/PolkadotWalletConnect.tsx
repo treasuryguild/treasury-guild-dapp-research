@@ -25,18 +25,18 @@ const PolkadotWalletConnect: React.FC<{
 
   console.log('PolkadotWalletConnect: Rendering', { isConnected, selectedAccount, balance, loading }); // Debug log
 
+  if (!isConnected || !selectedAccount) {
+    return null; // Don't render anything if not connected or no account selected
+  }
+
   return (
     <div className={styles.container}>
-      {isConnected && selectedAccount && (
-        <>
-          <ProjectDetailsForm walletAddress={selectedAccount} blockchain="Polkadot" />
-          <p className={styles.balance}>
-            Balance: {loading ? 'Loading...' : `${balance} ${
-              (tokens.find((token: any) => token.name === PROVIDERS.find((provider) => provider.url === selectedProvider)?.name) as any)?.symbol || ''
-            }`}
-          </p>
-        </>
-      )}
+      <ProjectDetailsForm walletAddress={selectedAccount} blockchain="Polkadot" />
+      <p className={styles.balance}>
+        Balance: {loading ? 'Loading...' : `${balance} ${
+          (tokens.find((token: any) => token.name === PROVIDERS.find((provider) => provider.url === selectedProvider)?.name) as any)?.symbol || ''
+        }`}
+      </p>
     </div>
   );
 };

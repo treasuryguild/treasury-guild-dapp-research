@@ -1,29 +1,20 @@
 // components/Polkadot/PolkadotWalletConnect.tsx
-import React, { useEffect } from 'react';
-import { usePolkadotWallet } from '../../hooks/usePolkadotWallet';
+import React from 'react';
+import { useWallet } from '../../context/WalletContext';
 import ProjectDetailsForm from '../ProjectDetailsForm';
 import styles from '../../styles/PolkadotWalletConnect.module.css';
 
-const PolkadotWalletConnect: React.FC<{ 
-  onBalanceLoaded: (loaded: boolean) => void,
-  isConnected: boolean,
-  onConnectionChange: (connected: boolean) => void
-}> = ({ onBalanceLoaded, isConnected, onConnectionChange }) => {
+const PolkadotWalletConnect: React.FC = () => {
+  const { polkadotWallet } = useWallet();
   const { 
     selectedAccount,
     balance,
     loading,
     tokens,
     selectedProvider,
-    PROVIDERS
-  } = usePolkadotWallet(isConnected, onConnectionChange);
-
-  useEffect(() => {
-    console.log('PolkadotWalletConnect: Balance updated', balance); // Debug log
-    onBalanceLoaded(!loading && balance !== '');
-  }, [loading, balance, onBalanceLoaded]);
-
-  console.log('PolkadotWalletConnect: Rendering', { isConnected, selectedAccount, balance, loading }); // Debug log
+    PROVIDERS,
+    isConnected
+  } = polkadotWallet;
 
   if (!isConnected || !selectedAccount) {
     return null; // Don't render anything if not connected or no account selected

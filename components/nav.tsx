@@ -3,10 +3,12 @@ import Link from 'next/link';
 import React from "react";
 import styles from '../styles/Nav.module.css';
 import BlockchainSelector from './BlockchainSelector';
-import PolkadotWalletControls from './Polkadot/PolkadotWalletControls';
-import CardanoConnectButton from './Cardano/CardanoConnectButton';
+import WalletControls from './WalletControls';
+import { useWallet } from '../context/WalletContext';
 
-const Nav = ({ selectedBlockchain, onBlockchainChange, polkadotWalletConnected, onPolkadotWalletConnection }: any) => {
+const Nav = () => {
+  const { selectedBlockchain, setSelectedBlockchain } = useWallet();
+
   return (
     <nav className={styles.routes}>
       <Link href="/" className={styles.navitems}>
@@ -18,19 +20,10 @@ const Nav = ({ selectedBlockchain, onBlockchainChange, polkadotWalletConnected, 
       <Link href='/dashboard' className={styles.navitems}>
         Dashboard
       </Link>
-      <div className={styles.walletControls}>
-        {selectedBlockchain === 'Polkadot' ? (
-          <PolkadotWalletControls 
-            isConnected={polkadotWalletConnected}
-            onConnectionChange={onPolkadotWalletConnection}
-          />
-        ) : (
-          <CardanoConnectButton />
-        )}
-      </div>
+      <WalletControls />
       <BlockchainSelector
         selectedBlockchain={selectedBlockchain}
-        onBlockchainChange={onBlockchainChange}
+        onBlockchainChange={setSelectedBlockchain}
       />
     </nav>
   );

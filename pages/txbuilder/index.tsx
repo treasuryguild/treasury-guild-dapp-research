@@ -1,8 +1,10 @@
 // pages/txbuilder/index.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import TxBuilderLayout from '../../layouts/TxBuilderLayout';
 import styles from '../../styles/TxBuilder.module.css';
+import { useWallet } from '../../context/WalletContext';
+import PolkadotWalletConnect from '../../components/Polkadot/PolkadotWalletConnect';
 
 const PolkadotTxBuilder = dynamic(
   () => import('../../components/Polkadot/PolkadotTxBuilder'),
@@ -14,18 +16,11 @@ const CardanoTxBuilder = dynamic(
   { ssr: false }
 );
 
-const PolkadotWalletConnect = dynamic(
-  () => import('../../components/Polkadot/PolkadotWalletConnect'),
-  { ssr: false }
-);
+export default function TxBuilder() {
+  const { selectedBlockchain, polkadotWallet, cardanoWallet } = useWallet();
 
-const CardanoWalletConnect = dynamic(
-  () => import('../../components/Cardano/CardanoWalletConnect'),
-  { ssr: false }
-);
-
-export default function TxBuilder({ selectedBlockchain, polkadotWalletConnected, onPolkadotWalletConnection }: { selectedBlockchain: string, polkadotWalletConnected: boolean, onPolkadotWalletConnection: (connected: boolean) => void }) {
-  const [polkadotBalanceLoaded, setPolkadotBalanceLoaded] = useState(false);
+  const { isConnected: isPolkadotConnected, balance: polkadotBalance } = polkadotWallet;
+  const { connected: isCardanoConnected } = cardanoWallet;
 
   return (
     <TxBuilderLayout blockchain={selectedBlockchain}>
@@ -33,17 +28,12 @@ export default function TxBuilder({ selectedBlockchain, polkadotWalletConnected,
         <div className={styles.content}>
           {selectedBlockchain === 'Polkadot' ? (
             <>
-              <PolkadotWalletConnect 
-                onBalanceLoaded={setPolkadotBalanceLoaded} 
-                isConnected={polkadotWalletConnected}
-                onConnectionChange={onPolkadotWalletConnection}
-              />
-              {polkadotBalanceLoaded && polkadotWalletConnected && <PolkadotTxBuilder />}
+              <PolkadotWalletConnect />
+              {isPolkadotConnected && polkadotBalance && <PolkadotTxBuilder />}
             </>
           ) : (
             <>
-              <CardanoWalletConnect />
-              <CardanoTxBuilder />
+              {isCardanoConnected && <CardanoTxBuilder />}
             </>
           )}
         </div>

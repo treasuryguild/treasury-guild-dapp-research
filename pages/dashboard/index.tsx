@@ -1,25 +1,14 @@
+// pages/dashboard/index.tsx
 import React from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import WalletDashboard from '../../components/WalletDashboard';
 import PublicProjectsDashboard from '../../components/PublicProjectsDashboard';
 import styles from '../../styles/Dashboard.module.css';
-import { useTxData } from '../../context/TxDataContext';
+import { useWallet } from '../../context/WalletContext';
 
-interface DashboardProps {
-  selectedBlockchain: string;
-  polkadotWalletConnected: boolean;
-  onPolkadotWalletConnection: (connected: boolean) => void;
-}
-
-export default function Dashboard({ 
-  selectedBlockchain, 
-  polkadotWalletConnected, 
-  onPolkadotWalletConnection 
-}: DashboardProps) {
+export default function Dashboard() {
   const [view, setView] = React.useState<'public' | 'wallet'>('wallet');
-  const { txData } = useTxData();
-
-  console.log('txData:', txData);
+  const { selectedBlockchain } = useWallet();
 
   return (
     <DashboardLayout blockchain={view === 'wallet' ? selectedBlockchain : undefined}>
@@ -42,11 +31,7 @@ export default function Dashboard({
           {view === 'public' ? (
             <PublicProjectsDashboard />
           ) : (
-            <WalletDashboard 
-              selectedBlockchain={selectedBlockchain}
-              polkadotWalletConnected={polkadotWalletConnected}
-              onPolkadotWalletConnection={onPolkadotWalletConnection}
-            />
+            <WalletDashboard />
           )}
         </div>
       </div>

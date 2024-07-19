@@ -1,25 +1,22 @@
 // components/Polkadot/PolkadotTransactions.tsx
 import React, { useState, useEffect } from 'react';
-import { useTxData } from '../../context/TxDataContext';
-import { PROVIDERS } from '../../constants/providers';
+import { useWallet } from '../../context/WalletContext';
 import { fetchAllTransactions, Transaction } from '../../utils/fetchTransactions';
 import TransactionTable from '../TransactionTable';
 
 export default function PolkadotTransactions() {
-  const { txData, setTxData } = useTxData();
-  const [walletBalance, setWalletBalance] = useState('');
+  const { polkadotWallet } = useWallet();
+  const { selectedAccount, selectedProvider } = polkadotWallet;
+  
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
-  
-  const storedAccount = localStorage.getItem('selectedAccount');
-  const [selectedProvider, setSelectedProvider] = useState(PROVIDERS[0].url);
 
   useEffect(() => {
-    if (storedAccount) {
-      loadTransactions(storedAccount);
+    if (selectedAccount) {
+      loadTransactions(selectedAccount);
     }
-  }, [storedAccount]);
+  }, [selectedAccount, selectedProvider]);
 
   const loadTransactions = async (address: string) => {
     setLoading(true);

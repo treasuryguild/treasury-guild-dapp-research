@@ -75,7 +75,6 @@ async function fetchTransactionDetails(subscanUrl: string, address: string) {
 
 export const checkWalletStatus = async (api: ApiPromise, accountAddress: string, selectedProvider: string) => {
     console.log('Checking wallet status...');
-    // Check if the receiving address exists in the "wallets" table
     const projectId = await getProjectIdByAddress(accountAddress);
     try {
         if (!api) return [];
@@ -100,7 +99,6 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                 const tokenSymbol = api.registry.chainTokens[0];
                 console.log("newTransactions", newTransactions);
 
-                // Group transactions by hash
                 const groupedTransactions: { [hash: string]: any[] } = {};
                 for (const transaction of newTransactions) {
                     if (!groupedTransactions[transaction.hash]) {
@@ -139,7 +137,6 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                         outputs: [
                             {
                                 toAddress: transaction.to,
-                                role: txType === 'incoming' ? ['recipient'] : ['sender'],
                                 tokens: [
                                     {
                                         token: {

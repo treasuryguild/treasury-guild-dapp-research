@@ -21,41 +21,27 @@ const WalletControls: React.FC = () => {
     accounts,
     PROVIDERS,
     authToken,
-    authenticate,
-    isConnected
+    isConnected,
+    isAuthenticating
   } = polkadotWallet;
-
-  const handleAuthClick = async () => {
-    if (!authToken) {
-      try {
-        await authenticate();
-      } catch (err) {
-        console.error('Authentication error:', err);
-      }
-    }
-  };
 
   return (
     <div className={styles.walletControls}>
-      <button 
-        className={styles.button} 
-        onClick={isConnected ? disconnectWallet : connectWallet}
-      >
-        {isConnected ? 'Disconnect' : 'Connect'}
-      </button>
       {isConnected && (
         <>
           <select 
-            className={styles.select} 
+            className={styles.select}
             value={selectedProvider} 
             onChange={(e) => setSelectedProvider(e.target.value)}
           >
             {PROVIDERS.map((provider, index) => (
-              <option key={index} value={provider.url}>{provider.name}</option>
+              <option key={index} value={provider.url}>
+                {provider.name}
+              </option>
             ))}
           </select>
           <select 
-            className={styles.select} 
+            className={styles.select}
             value={selectedAccount || ''} 
             onChange={handleAccountChange}
           >
@@ -66,12 +52,20 @@ const WalletControls: React.FC = () => {
             ))}
           </select>
           {authToken ? (
-            <span className={styles.authStatus}>Authenticated</span>
+            <span className={`${styles.authStatus} ${styles.authenticated}`}>✓</span>
+          ) : isAuthenticating ? (
+            <span className={`${styles.authStatus} ${styles.authenticating}`}>Auth...</span>
           ) : (
-            <button className={styles.button} onClick={handleAuthClick}>Authenticate</button>
+            <span className={`${styles.authStatus} ${styles.notAuthenticated}`}>Not Auth</span>
           )}
         </>
       )}
+      <button 
+        className={styles.button}
+        onClick={isConnected ? disconnectWallet : connectWallet}
+      >
+        {isConnected ? 'Disconnect' : 'Connect'}
+      </button>
     </div>
   );
 };

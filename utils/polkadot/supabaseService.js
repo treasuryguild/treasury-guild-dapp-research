@@ -100,7 +100,6 @@ async function sendTransactionDetailsToSupabase(transactionDetails) {
         outputs: [
           {
             toAddress: walletAddress,
-            role: txType === 'incoming' ? ['recipient'] : ['sender'],
             tokens: [
               {
                 token: {

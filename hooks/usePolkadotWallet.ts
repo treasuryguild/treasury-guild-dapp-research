@@ -21,6 +21,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
   const [tokens, setTokens] = useState([]);
   const walletStatusChecked = useRef<{ [key: string]: boolean }>({});
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
     initPolkadotExtension();
@@ -219,11 +220,13 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       console.log('No selected account, aborting authentication');
       return;
     }
+    setIsAuthenticating(true);
     const message = `Authenticate with your Polkadot account: ${selectedAccount}`;
     console.log('Signing message:', message);
     const signature = await signMessage(message);
     if (!signature) {
       console.log('Failed to sign message, aborting authentication');
+      setIsAuthenticating(false);
       return;
     }
     console.log('Message signed successfully');
@@ -251,6 +254,8 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       }
     } catch (error) {
       console.error('Error during authentication:', error);
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -258,6 +263,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     const connected = await checkForWalletConnection();
     if (connected) {
       onConnectionChange(true);
+      localStorage.setItem('polkadotWalletConnected', 'true');
       if (selectedAccount) {
         localStorage.setItem('selectedAccount', selectedAccount);
         await authenticate();
@@ -273,6 +279,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     setBalance('');
     localStorage.removeItem('selectedAccount');
     localStorage.removeItem('polkadotAuthToken');
+    localStorage.removeItem('polkadotWalletConnected');
     setTxData(prevTxData => ({
       ...prevTxData,
       wallet: '',
@@ -281,6 +288,13 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     }));
     onConnectionChange(false);
   };
+
+  useEffect(() => {
+    if (isConnected && selectedAccount && !authToken && !isAuthenticating) {
+      authenticate();
+    }
+  }, [isConnected, selectedAccount, authToken, isAuthenticating]);
+
 
   useEffect(() => {
     const storedToken = localStorage.getItem('polkadotAuthToken');
@@ -322,6 +336,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     PROVIDERS,
     authToken,
     authenticate,
-    isConnected
+    isConnected,
+    isAuthenticating
   };
 };

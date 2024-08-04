@@ -71,7 +71,7 @@ async function getOrCreateExternalWallets(addresses) {
 
 function removeDuplicateContributions(contributions) {
   const uniqueContributions = contributions.reduce((acc, contribution) => {
-    const key = `${contribution.inputs.map(input => input.fromAddress).join(',')}-${contribution.outputs.map(output => output.toAddress).join(',')}-${contribution.outputs.map(output => output.role).join(',')}`;
+    const key = `${contribution.inputs.map(input => input.fromAddress).join(',')}-${contribution.outputs.map(output => output.toAddress).join(',')}`;
     if (!acc[key]) {
       acc[key] = contribution;
     }
@@ -190,7 +190,6 @@ export default async function updateTransactionTables(jsonData) {
                 outputData.push({
                   transaction_id: transactionData.id,
                   contribution_id: contributionId,
-                  role: output.role,
                   to_address: output.toAddress,
                   token_id: tokenId,
                   amount: token.amount,

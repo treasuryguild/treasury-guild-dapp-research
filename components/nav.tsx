@@ -11,20 +11,24 @@ const Nav = () => {
 
   return (
     <nav className={styles.routes}>
-      <Link href="/" className={styles.navitems}>
-        Home
-      </Link>
-      <Link href='/txbuilder' className={styles.navitems}>
-        Build Tx
-      </Link>
-      <Link href='/dashboard' className={styles.navitems}>
-        Dashboard
-      </Link>
-      <WalletControls />
-      <BlockchainSelector
-        selectedBlockchain={selectedBlockchain}
-        onBlockchainChange={setSelectedBlockchain}
-      />
+      <div className={styles.leftItems}>
+        <Link href="/" className={styles.navitems}>
+          Home
+        </Link>
+        <Link href='/txbuilder' className={styles.navitems}>
+          Build Tx
+        </Link>
+        <Link href='/dashboard' className={styles.navitems}>
+          Dashboard
+        </Link>
+      </div>
+      <div className={styles.rightItems}>
+        <WalletControls />
+        <BlockchainSelector
+          selectedBlockchain={selectedBlockchain}
+          onBlockchainChange={setSelectedBlockchain}
+        />
+      </div>
     </nav>
   );
 };

@@ -80,6 +80,7 @@ async function sendTransactionDetailsToSupabase(transactionDetails) {
       {
         name: txType === 'incoming' ? 'Incoming Rewards' : 'Outgoing Transaction',
         labels: txType === 'incoming' ? ['Rewards'] : ['Transaction'],
+        sub_group: txType === 'incoming' ? [''] : [''],
         taskDate: formattedDate,
         inputs: [
           {

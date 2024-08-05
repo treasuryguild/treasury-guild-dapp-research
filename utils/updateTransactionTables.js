@@ -1,5 +1,6 @@
 // updateTransactionTables.js
 import { supabaseAnon } from '../lib/supabaseClient';
+import { transformContributionsToMetadata } from '../utils/transformContributionsMetadata';
 
 async function getOrCreateTokens(tokens) {
   const tokenNames = tokens.map(token => token.name);
@@ -85,7 +86,10 @@ export default async function updateTransactionTables(jsonData) {
   const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions = [], tx_type } = jsonData;
 
   const uniqueContributions = removeDuplicateContributions(contributions);
-  
+  console.log('Contributions:', contributions);
+  const metadata = transformContributionsToMetadata(contributions, transactionHash);
+  console.log('Transaction metadata:', metadata);
+
   const transactionData = {
     hash: transactionHash,
     block_number: blockNumber,
@@ -95,7 +99,8 @@ export default async function updateTransactionTables(jsonData) {
     project_id: project_id,
     fee: fee,
     contributions: contributions,
-    tx_type: tx_type
+    tx_type: tx_type,
+    metadata: metadata
   };
 
   try {
@@ -143,6 +148,7 @@ export default async function updateTransactionTables(jsonData) {
         transaction_id: transactionData.id,
         name: contribution.name,
         labels: contribution.labels,
+        sub_group: contribution.sub_group,
         task_date: contribution.taskDate
       }));
 

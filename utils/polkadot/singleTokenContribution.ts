@@ -30,6 +30,7 @@ export const handleSingleTokenContribution = async (
   const remarkData = {
     Contribution: contribution.name,
     Labels: contribution.labels.split(',').map((label: any) => label.trim()),
+    SubGroup: contribution.sub_group.split(',').map((group: any) => group.trim()),
     Date: contribution.date,
     Tokens: [{ token: contributor.tokens[0].token, amount: amount.toString() }],
     ContributorId: contributorId,

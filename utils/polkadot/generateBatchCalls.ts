@@ -6,6 +6,7 @@ import { handleMultipleTokensContribution } from './multipleTokensContribution';
 interface Contribution {
   name: string;
   labels: string;
+  sub_group: string;
   date: string;
   contributors: {
     tokens: {
@@ -73,6 +74,7 @@ export const generateBatchCalls = async (
     jsonData.contributions.push({
       name: contribution.name,
       labels: contribution.labels.split(',').map(label => label.trim()),
+      sub_group: contribution.sub_group.split(',').map(group => group.trim()),
       taskDate: contribution.date,
       inputs: contributionInputs,
       outputs: contributionOutputs,

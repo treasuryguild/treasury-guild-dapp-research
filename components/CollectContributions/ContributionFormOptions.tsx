@@ -10,6 +10,7 @@ import styles from '../../styles/ContFormOptions.module.css';
 interface Contribution {
   name: string;
   labels: string;
+  sub_group: string;
   date: string;
   contributors: {
     tokens: {

@@ -3,7 +3,7 @@ import styles from '../../styles/ContributionForm.module.css';
 
 function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbol: string, balance: string }[] }) {
   const [contributions, setContributions] = useState([
-    { id: 1, name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', tokenAmounts: tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: '' })) }
+    { id: 1, name: '', labels: '',sub_group: '', date: new Date().toISOString().split('T')[0], walletAddress: '', tokenAmounts: tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: '' })) }
   ]);
 
   // Unique ID for new contributions
@@ -26,7 +26,7 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
   };
 
   const addContribution = () => {
-    setContributions([...contributions, { id: getNextId(), name: '', labels: '', date: new Date().toISOString().split('T')[0], walletAddress: '', tokenAmounts: tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: '' })) }]);
+    setContributions([...contributions, { id: getNextId(), name: '', labels: '',sub_group: '', date: new Date().toISOString().split('T')[0], walletAddress: '', tokenAmounts: tokens.map(tokenObj => ({ token: tokenObj.symbol, amount: '' })) }]);
   };
 
   const removeContribution = (id: any) => {
@@ -37,7 +37,7 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
     const seen = new Set();
     for (const contribution of contributions) {
       for (const tokenAmount of contribution.tokenAmounts) {
-        const key = `${contribution.name}-${contribution.labels}-${contribution.date}-${contribution.walletAddress}-${tokenAmount.token}-${tokenAmount.amount}`;
+        const key = `${contribution.name}-${contribution.labels}-${contribution.sub_group}-${contribution.date}-${contribution.walletAddress}-${tokenAmount.token}-${tokenAmount.amount}`;
         if (seen.has(key)) {
           return true;
         }
@@ -50,10 +50,10 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
   // Preparing contributions for submission by grouping them based on name, labels, and date
   const prepareForSubmission = () => {
     const grouped = contributions.reduce((acc: any, current: any) => {
-      const { name, labels, date, walletAddress, tokenAmounts } = current;
-      const key = `${name}-${labels}-${date}`;
+      const { name, labels, sub_group, date, walletAddress, tokenAmounts } = current;
+      const key = `${name}-${labels}-${sub_group}-${date}`;
       if (!acc[key]) {
-        acc[key] = { name, labels, date, contributors: [] };
+        acc[key] = { name, labels, sub_group, date, contributors: [] };
       }
       acc[key].contributors.push({ walletAddress, tokens: tokenAmounts });
       return acc;
@@ -69,6 +69,7 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
       return;
     }
     const preparedContributions = prepareForSubmission();
+    //console.log('preparedContributions', preparedContributions);
     onSubmit(preparedContributions);
   };
 
@@ -79,6 +80,7 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
           <tr>
             <th>Name of Contribution</th>
             <th>Labels (comma-separated)</th>
+            <th>Sub Group</th>
             <th>Date</th>
             <th>Wallet Address</th>
             {tokens.map((token) => (
@@ -103,6 +105,14 @@ function ContributionForm({ onSubmit, tokens }: { onSubmit: any, tokens: { symbo
                   type="text"
                   value={contribution.labels}
                   onChange={(e) => handleChange(contribution.id, 'labels', e.target.value)}
+                  className={styles.input}
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  value={contribution.sub_group}
+                  onChange={(e) => handleChange(contribution.id, 'sub_group', e.target.value)}
                   className={styles.input}
                 />
               </td>

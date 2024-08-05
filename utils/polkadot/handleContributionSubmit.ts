@@ -9,6 +9,7 @@ const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
 interface Contribution {
   name: string;
   labels: string;
+  sub_group: string;
   date: string;
   contributors: {
     tokens: {

@@ -117,6 +117,7 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                     const contributions = transactions.map((transaction) => ({
                         name: txType === 'incoming' ? 'Incoming Rewards' : 'Outgoing Transaction',
                         labels: txType === 'incoming' ? ['Rewards'] : ['Transaction'],
+                        sub_group: txType === 'incoming' ? [''] : [''],
                         taskDate: formattedDate,
                         inputs: [
                             {

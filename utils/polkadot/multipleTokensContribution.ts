@@ -49,6 +49,7 @@ export const handleMultipleTokensContribution = async (
   const remarkData = {
     Contribution: contribution.name,
     Labels: contribution.labels.split(',').map((label: any) => label.trim()),
+    SubGroup: contribution.sub_group.split(',').map((group: any) => group.trim()),
     Date: contribution.date,
     Tokens: contributor.tokens.map((token: any) => ({
       token: token.token,

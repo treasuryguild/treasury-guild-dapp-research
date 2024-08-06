@@ -29,9 +29,16 @@ interface Project {
   project_settings: any | null;
 }
 
-const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }> = ({
+interface ProjectDetailsFormProps {
+  walletAddress: string;
+  blockchain: string;
+  provider: string;
+}
+
+const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({
   walletAddress,
   blockchain,
+  provider,
 }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -62,6 +69,7 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
               wallet: walletAddress,
               project: projectData.name,
               group: projectData.groups.name,
+              provider: provider,
             }));
           } else {
             console.error('Project data or group information is missing');
@@ -84,7 +92,7 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
     if (walletAddress) {
       fetchInitialData();
     }
-  }, [walletAddress, blockchain]);
+  }, [walletAddress, blockchain, provider]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -173,7 +181,7 @@ const ProjectDetailsForm: React.FC<{ walletAddress: string; blockchain: string }
 
   return (
     <form onSubmit={handleSubmit}>
-      <p>Please select or create a group and project:</p>
+      <p>Please select or create a group and project for {provider}:</p>
       <select value={selectedGroupId} onChange={handleGroupChange}>
         <option value="">Select Group</option>
         {groups.map((group) => (

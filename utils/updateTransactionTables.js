@@ -83,7 +83,7 @@ function removeDuplicateContributions(contributions) {
 }
 
 export default async function updateTransactionTables(jsonData) {
-  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, network, contributions = [], tx_type } = jsonData;
+  const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, contributions = [], tx_type } = jsonData;
 
   const uniqueContributions = removeDuplicateContributions(contributions);
   console.log('Contributions:', contributions);
@@ -100,10 +100,9 @@ export default async function updateTransactionTables(jsonData) {
     fee: fee,
     contributions: contributions,
     tx_type: tx_type,
-    metadata: metadata,
-    network: network
+    metadata: metadata
   };
-  console.log('Transaction data when updating:', transactionData);
+
   try {
     // Start a transaction
     await supabaseAnon.rpc('begin');

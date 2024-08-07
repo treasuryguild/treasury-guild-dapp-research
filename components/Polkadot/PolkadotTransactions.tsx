@@ -6,6 +6,7 @@ import TransactionTable from '../TransactionTable';
 
 export default function PolkadotTransactions() {
   const { polkadotWallet } = useWallet();
+  console.log('Polkadot Wallet:', polkadotWallet);
   const { selectedAccount, selectedProvider } = polkadotWallet;
   
   const [loading, setLoading] = useState(false);

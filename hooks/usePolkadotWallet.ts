@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
+import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
 import { initPolkadotExtension, enableExtension, getAccounts } from '../utils/polkadot/polkadotExtensionDapp';
 import { useTxData } from '../context/TxDataContext';
 import { fetchTokenBalances } from '../utils/polkadot/fetchTokenBalances';
@@ -22,6 +23,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
   const walletStatusChecked = useRef<{ [key: string]: boolean }>({});
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [ss58Format, setSS58Format] = useState<number | null>(null);
 
   useEffect(() => {
     initPolkadotExtension();
@@ -42,8 +44,17 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
         console.log('Token decimals:', decimals);
         setTokenDecimals(decimals);
         setApi(api);
+
+        // Get the SS58 format for the current chain
+        const ss58Format: any = api.registry.chainSS58;
+        console.log('Chain SS58 format:', ss58Format);
+        setSS58Format(ss58Format);
+
         setLoading(false);
         console.log('Polkadot API setup complete');
+
+        // Fetch accounts for the new provider
+        await fetchAndFilterAccounts(ss58Format);
       } catch (error) {
         console.error('Error setting up Polkadot API:', error);
         setLoading(false);
@@ -60,22 +71,39 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     }));
   }, [selectedProvider, setTxData]);
 
-  const enableAndFetchAccounts = async () => {
-    if (typeof window === 'undefined') return null;
+  const fetchAndFilterAccounts = async (chainSS58Format: number) => {
+    if (typeof window === 'undefined') return;
 
     try {
       await enableExtension('Your App Name');
-      const accounts = await getAccounts();
-      return accounts.length > 0 ? accounts : null;
+      const allAccounts = await getAccounts();
+      
+      // Filter and format accounts based on the chain's SS58 format
+      const filteredAccounts = allAccounts.map((account: any) => ({
+        ...account,
+        address: encodeAddress(decodeAddress(account.address), chainSS58Format)
+      }));
+
+      setAccounts(filteredAccounts);
+
+      // Reset selected account when changing providers
+      setSelectedAccount(null);
+      localStorage.removeItem('selectedAccount');
+
+      return filteredAccounts.length > 0 ? filteredAccounts : null;
     } catch (error) {
-      console.error('Error enabling and fetching accounts:', error);
+      console.error('Error fetching and filtering accounts:', error);
       return null;
     }
   };
 
   const checkForWalletConnection = useCallback(async () => {
     console.log('Checking for wallet connection...');
-    const accounts = await enableAndFetchAccounts();
+    if (ss58Format === null) {
+      console.log('SS58 format not yet available');
+      return false;
+    }
+    const accounts = await fetchAndFilterAccounts(ss58Format);
     if (accounts) {
       console.log('Accounts fetched:', accounts);
       setAccounts(accounts);
@@ -87,7 +115,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
           ...prevTxData,
           wallet: storedAccount,
         }));
-      } else {
+      } else if (accounts.length > 0) {
         console.log('Using first account:', accounts[0].address);
         const newSelectedAccount = accounts[0].address;
         setSelectedAccount(newSelectedAccount);
@@ -102,7 +130,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       console.log('No accounts found');
       return false;
     }
-  }, [setTxData]);
+  }, [setTxData, ss58Format]);
 
   useEffect(() => {
     console.log('Wallet connection effect triggered. isConnected:', isConnected);
@@ -307,6 +335,13 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     }
   }, [setTxData]);
 
+  const handleProviderChange = useCallback((newProvider: string) => {
+    setSelectedProvider(newProvider);
+    // Reset selected account when changing providers
+    setSelectedAccount(null);
+    localStorage.removeItem('selectedAccount');
+  }, []);
+
   const handleAccountChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     const newAccount = event.target.value;
     console.log('Account changed to:', newAccount);
@@ -329,7 +364,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     balance,
     loading,
     tokens,
-    setSelectedProvider,
+    setSelectedProvider: handleProviderChange,
     handleAccountChange,
     connectWallet,
     disconnectWallet,

@@ -164,6 +164,7 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                         project_id: projectId,
                         tx_type: txType,
                         contributions,
+                        network: network
                     };
 
                     try {

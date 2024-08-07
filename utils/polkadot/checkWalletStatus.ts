@@ -92,7 +92,7 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                 !existingTransactionHashes.includes(transaction.hash)
             );
 
-            console.log('New transactions:', newTransactions, 'Transaction details:', transactionDetails, "Provider", selectedProviderName);
+            console.log('New transactions:', newTransactions, 'Transaction details:', transactionDetails);
 
             if (newTransactions.length > 0) {
                 const tokenDecimals = api.registry.chainDecimals[0];
@@ -113,7 +113,6 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                     const firstTransaction = transactions[0];
                     const txType = firstTransaction.from === accountAddress ? 'outgoing' : 'incoming';
                     const formattedDate = formatDate(firstTransaction.block_timestamp * 1000);
-                    const network = selectedProviderName;
 
                     const contributions = transactions.map((transaction) => ({
                         name: txType === 'incoming' ? 'Incoming Rewards' : 'Outgoing Transaction',
@@ -164,9 +163,8 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                         project_id: projectId,
                         tx_type: txType,
                         contributions,
-                        network: network,
                     };
-                    console.log("jsonData", jsonData);
+
                     try {
                         if (jsonData.project_id) {
                             const { data, error } = await supabaseAnon

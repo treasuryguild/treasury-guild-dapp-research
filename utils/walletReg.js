@@ -20,11 +20,10 @@ export const checkWalletExists = async (walletAddress, blockchain) => {
       .from('wallets')
       .select('*')
       .eq('address', walletAddress)
-      .eq('blockchain', blockchain)
-      .single();
+      .eq('blockchain', blockchain);
 
     if (error) throw error;
-    return !!data;
+    return data && data.length > 0;
   });
 };
 

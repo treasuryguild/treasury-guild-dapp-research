@@ -113,7 +113,7 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                     const firstTransaction = transactions[0];
                     const txType = firstTransaction.from === accountAddress ? 'outgoing' : 'incoming';
                     const formattedDate = formatDate(firstTransaction.block_timestamp * 1000);
-                    const network = selectedProviderName;
+                    const network = selectedProvider;
 
                     const contributions = transactions.map((transaction) => ({
                         name: txType === 'incoming' ? 'Incoming Rewards' : 'Outgoing Transaction',

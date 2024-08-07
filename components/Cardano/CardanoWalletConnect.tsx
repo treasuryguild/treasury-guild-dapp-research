@@ -50,7 +50,7 @@ const CardanoWalletConnect: React.FC = () => {
   return (
     <div>
       {walletAddress ? (
-        <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" />
+        <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" provider='Cardano'/>
       ) : (
         <div>No wallet address available. Please try reconnecting your wallet.</div>
       )}

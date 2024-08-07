@@ -35,6 +35,7 @@ export const generateBatchCalls = async (
     success: false,
     fee: '0',
     contributions: [],
+    network: txData.provider
   };
 
   for (const contribution of contributions) {

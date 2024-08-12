@@ -24,6 +24,8 @@ export default function PolkadotTxBuilder() {
     updateProvider();
   }, [txData]);
 
+  console.log("txData", txData);
+  
   return (
     <>
       {transactionStatus === 'in_progress' ? (

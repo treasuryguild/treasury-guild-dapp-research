@@ -29,6 +29,9 @@ export default function CardanoTxBuilder() {
       policy_id: '',
       blockchain: 'Cardano',
     }]
+
+    console.log("txData", txData);
+    
     return (
       <ContributionForms onContributionSubmit={handleContributionSubmit} tokens={tokens} />
     );

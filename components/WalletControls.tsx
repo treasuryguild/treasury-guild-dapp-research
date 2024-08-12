@@ -2,13 +2,14 @@
 import React from 'react';
 import { useWallet } from '../context/WalletContext';
 import CardanoConnectButton from './Cardano/CardanoConnectButton';
+import CardanoCustomConnectButton from './Cardano/CardanoCustomConnectButton';
 import styles from '../styles/WalletControls.module.css';
 
 const WalletControls: React.FC = () => {
   const { selectedBlockchain, polkadotWallet } = useWallet();
 
   if (selectedBlockchain === 'Cardano') {
-    return <CardanoConnectButton />;
+    return <CardanoCustomConnectButton />;
   }
 
   const {

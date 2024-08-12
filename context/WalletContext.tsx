@@ -1,4 +1,3 @@
-// context/WalletContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usePolkadotWallet } from '../hooks/usePolkadotWallet';
 import { useWallet as useMeshWallet } from '@meshsdk/react';
@@ -8,6 +7,8 @@ interface WalletContextType {
   setSelectedBlockchain: (blockchain: string) => void;
   polkadotWallet: ReturnType<typeof usePolkadotWallet>;
   cardanoWallet: ReturnType<typeof useMeshWallet>;
+  isCardanoConnected: boolean;
+  setIsCardanoConnected: (connected: boolean) => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -15,6 +16,7 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedBlockchain, setSelectedBlockchain] = useState<string>('Polkadot');
   const [isPolkadotConnected, setIsPolkadotConnected] = useState<boolean>(false);
+  const [isCardanoConnected, setIsCardanoConnected] = useState<boolean>(false);
 
   const cardanoWallet = useMeshWallet();
   const polkadotWallet = usePolkadotWallet(isPolkadotConnected, setIsPolkadotConnected);
@@ -26,6 +28,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     const storedPolkadotConnection = localStorage.getItem('polkadotWalletConnected');
     setIsPolkadotConnected(storedPolkadotConnection === 'true');
+    const storedCardanoConnection = localStorage.getItem('cardanoWalletConnected');
+    setIsCardanoConnected(storedCardanoConnection === 'true');
   }, []);
 
   useEffect(() => {
@@ -37,7 +41,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       selectedBlockchain,
       setSelectedBlockchain,
       polkadotWallet,
-      cardanoWallet
+      cardanoWallet,
+      isCardanoConnected,
+      setIsCardanoConnected
     }}>
       {children}
     </WalletContext.Provider>

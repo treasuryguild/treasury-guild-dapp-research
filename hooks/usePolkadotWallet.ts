@@ -356,6 +356,8 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     }
   }, [api, setTxData, fetchBalance]);
 
+  //console.log( "txData", txData);
+  
   return {
     accounts,
     selectedAccount,

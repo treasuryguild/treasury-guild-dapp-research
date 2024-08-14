@@ -4,7 +4,7 @@ import { WsProvider, ApiPromise } from '@polkadot/api';
 import { InjectedAccountWithMeta } from '@polkadot/extension-inject/types';
 import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
 import { initPolkadotExtension, enableExtension, getAccounts } from '../utils/polkadot/polkadotExtensionDapp';
-import { useTxData } from '../context/TxDataContext';
+import { usePolkadotData } from '../context/PolkadotContext';
 import { fetchTokenBalances } from '../utils/polkadot/fetchTokenBalances';
 import { checkWalletStatus } from '../utils/polkadot/checkWalletStatus';
 import { updateTokensTable } from '../utils/updateTokensTable';
@@ -14,7 +14,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
   const [accounts, setAccounts] = useState<InjectedAccountWithMeta[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [api, setApi] = useState<ApiPromise | null>(null);
-  const { txData, setTxData } = useTxData();
+  const { polkadotData, setPolkadotData } = usePolkadotData();
   const [selectedProvider, setSelectedProvider] = useState(PROVIDERS[0].url);
   const [balance, setBalance] = useState('');
   const [loading, setLoading] = useState(false);
@@ -65,11 +65,11 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
   }, [selectedProvider]);
 
   useEffect(() => {
-    setTxData((prevTxData) => ({
+    setPolkadotData((prevTxData) => ({
       ...prevTxData,
       provider: selectedProvider
     }));
-  }, [selectedProvider, setTxData]);
+  }, [selectedProvider, setPolkadotData]);
 
   const fetchAndFilterAccounts = async (chainSS58Format: number) => {
     if (typeof window === 'undefined') return;
@@ -111,7 +111,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       if (storedAccount && accounts.some((account: any) => account.address === storedAccount)) {
         console.log('Using stored account:', storedAccount);
         setSelectedAccount(storedAccount);
-        setTxData((prevTxData) => ({
+        setPolkadotData((prevTxData) => ({
           ...prevTxData,
           wallet: storedAccount,
         }));
@@ -119,7 +119,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
         console.log('Using first account:', accounts[0].address);
         const newSelectedAccount = accounts[0].address;
         setSelectedAccount(newSelectedAccount);
-        setTxData((prevTxData) => ({
+        setPolkadotData((prevTxData) => ({
           ...prevTxData,
           wallet: newSelectedAccount,
         }));
@@ -130,7 +130,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       console.log('No accounts found');
       return false;
     }
-  }, [setTxData, ss58Format]);
+  }, [setPolkadotData, ss58Format]);
 
   useEffect(() => {
     console.log('Wallet connection effect triggered. isConnected:', isConnected);
@@ -174,7 +174,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       console.log('Balance fetched:', finalBalance);
       const formattedBalance = finalBalance.toFixed(4);
       setBalance(formattedBalance);
-      setTxData((prevTxData) => ({
+      setPolkadotData((prevTxData) => ({
         ...prevTxData,
         balance: formattedBalance
       }));
@@ -187,7 +187,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     } finally {
       setLoading(false);
     }
-  }, [api, selectedAccount, tokenDecimals, isConnected, setTxData]);
+  }, [api, selectedAccount, tokenDecimals, isConnected, setPolkadotData]);
 
   useEffect(() => {
     console.log('Balance fetch effect triggered.');
@@ -219,12 +219,12 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setTxData((prevTxData) => ({
+      setPolkadotData((prevTxData) => ({
         ...prevTxData,
         tokens
       }));
     }
-  }, [tokens, setTxData]);
+  }, [tokens, setPolkadotData]);
 
   const signMessage = async (message: string) => {
     if (!selectedAccount) return null;
@@ -273,7 +273,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
         setAuthToken(token);
         localStorage.setItem('polkadotAuthToken', token);
         
-        setTxData(prevTxData => ({
+        setPolkadotData(prevTxData => ({
           ...prevTxData,
           authToken: token
         }));
@@ -308,7 +308,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     localStorage.removeItem('selectedAccount');
     localStorage.removeItem('polkadotAuthToken');
     localStorage.removeItem('polkadotWalletConnected');
-    setTxData(prevTxData => ({
+    setPolkadotData(prevTxData => ({
       ...prevTxData,
       wallet: '',
       authToken: null,
@@ -328,12 +328,12 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     const storedToken = localStorage.getItem('polkadotAuthToken');
     if (storedToken) {
       setAuthToken(storedToken);
-      setTxData(prevTxData => ({
+      setPolkadotData(prevTxData => ({
         ...prevTxData,
         authToken: storedToken
       }));
     }
-  }, [setTxData]);
+  }, [setPolkadotData]);
 
   const handleProviderChange = useCallback((newProvider: string) => {
     setSelectedProvider(newProvider);
@@ -346,7 +346,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     const newAccount = event.target.value;
     console.log('Account changed to:', newAccount);
     setSelectedAccount(newAccount);
-    setTxData((prevTxData) => ({
+    setPolkadotData((prevTxData) => ({
       ...prevTxData,
       wallet: newAccount,
     }));
@@ -354,7 +354,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     if (api) {
       fetchBalance();
     }
-  }, [api, setTxData, fetchBalance]);
+  }, [api, setPolkadotData, fetchBalance]);
 
   //console.log( "txData", txData);
   

@@ -1,11 +1,11 @@
 // components/Cardano/CardanoTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import ContributionForms from '../CollectContributions/ContributionFormOptions';
-import { useTxData } from '../../context/TxDataContext';
+import { useCardanoData } from '../../context/CardanoContext';
 
 export default function CardanoTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
-  const { txData, setTxData } = useTxData();
+  const { cardanoData, setCardanoData } = useCardanoData();
   const [activeForm, setActiveForm] = useState('contribution');
 
   const handleContributionSubmit = async (contributions: any) => {
@@ -30,7 +30,7 @@ export default function CardanoTxBuilder() {
       blockchain: 'Cardano',
     }]
 
-    console.log("txData", txData);
+    console.log("CardanoData", cardanoData);
     
     return (
       <ContributionForms onContributionSubmit={handleContributionSubmit} tokens={tokens} />

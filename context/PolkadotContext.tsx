@@ -1,8 +1,8 @@
-// ../context/TxDataContext.tsx
+// ../context/PolkadotDataContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { PROVIDERS } from '../constants/providers'; // Make sure this path is correct
+import { PROVIDERS } from '../constants/providers'; 
 
-interface TxData {
+export interface PolkadotData {
   group: string;
   project: string;
   project_id: string;
@@ -10,7 +10,6 @@ interface TxData {
   project_type:string;
   logo_url: string;
   wallet: string;
-  ada_wallet_stake_address: string;
   txHash: string;
   monthly_budget_balance: any;
   monthly_wallet_budget_string: string;
@@ -32,19 +31,19 @@ interface TxData {
   authToken: string | null;
 }
 
-interface TxDataContextProps {
-  txData: TxData;
-  setTxData: React.Dispatch<React.SetStateAction<TxData>>;
+interface PolkadotDataContextProps {
+  polkadotData: PolkadotData;
+  setPolkadotData: React.Dispatch<React.SetStateAction<PolkadotData>>;
 }
 
-export const TxDataContext = createContext<TxDataContextProps | undefined>(undefined);
+export const PolkadotDataContext = createContext<PolkadotDataContextProps | undefined>(undefined);
 
-interface TxDataProviderProps {
+interface PolkadotDataProviderProps {
   children: ReactNode;
 }
 
-export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
-  const [txData, setTxData] = useState<TxData>({ 
+export const PolkadotDataProvider: React.FC<PolkadotDataProviderProps> = ({ children }) => {
+  const [polkadotData, setPolkadotData] = useState<PolkadotData>({ 
     group: '',
     project:'',
     project_id:'',
@@ -52,7 +51,6 @@ export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
     project_type:'',
     logo_url:'',
     wallet:'',
-    ada_wallet_stake_address:'',
     txHash:'',
     monthly_budget_balance: {},
     monthly_wallet_budget_string:'',
@@ -75,16 +73,16 @@ export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
   });
 
   return (
-    <TxDataContext.Provider value={{ txData, setTxData }}>
+    <PolkadotDataContext.Provider value={{ polkadotData, setPolkadotData }}>
       {children}
-    </TxDataContext.Provider>
+    </PolkadotDataContext.Provider>
   );
 };
 
-export const useTxData = (): TxDataContextProps => {
-  const context = useContext(TxDataContext);
+export const usePolkadotData = (): PolkadotDataContextProps => {
+  const context = useContext(PolkadotDataContext);
   if (!context) {
-    throw new Error("useTxData must be used within a TxDataProvider");
+    throw new Error("usePolkadotData must be used within a PolkadotDataProvider");
   }
   return context;
 }

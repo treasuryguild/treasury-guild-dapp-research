@@ -1,7 +1,7 @@
 // components/GitHubProjectBoardForm.tsx
 import React, { useState, useEffect } from 'react';
 import { fetchProjectBoardDetails } from '../../services/githubApi';
-import { useTxData } from '../../context/TxDataContext';
+import { usePolkadotData } from '../../context/PolkadotContext';
 import { supabaseAnon } from '../../lib/supabaseClient';
 import styles from '../../styles/GitHubProjectBoardForm.module.css';
 import CustomizableProjectTable from './CustomizableProjectTable';
@@ -35,14 +35,14 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
   const [showForm, setShowForm] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState('');
   const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(null);
-  const { txData, setTxData } = useTxData();
+  const { polkadotData, setPolkadotData } = usePolkadotData();
 
   useEffect(() => {
     const fetchProject = async () => {
       const { data, error } = await supabaseAnon
         .from('projects')
         .select('*')
-        .eq('id', txData.project_id)
+        .eq('id', polkadotData.project_id)
         .single();
 
       if (error) {
@@ -60,7 +60,7 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
     };
 
     fetchProject();
-  }, [txData.project_id]);
+  }, [polkadotData.project_id]);
 
   const handleFetchProjectDetails = async (board: any) => {
     try {
@@ -97,7 +97,7 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
         const { data, error } = await supabaseAnon
           .from('projects')
           .update({ project_settings: updatedSettings })
-          .eq('id', txData.project_id);
+          .eq('id', polkadotData.project_id);
 
         if (error) {
           throw error;
@@ -108,7 +108,7 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
         const { data, error }: any = await supabaseAnon.from('projects').insert([
           {
             name: `Project Board ${projectNumber}`,
-            group_id: txData.group,
+            group_id: polkadotData.group,
             project_settings: { boards: [newBoard] },
           },
         ]);

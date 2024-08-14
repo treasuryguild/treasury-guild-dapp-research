@@ -1,7 +1,7 @@
 // ../components/Cardano/CardanoCustomConnectButton.tsx
 import React, { useState, useEffect } from 'react';
 import { BrowserWallet } from '@meshsdk/core';
-import { useTxData } from '../../context/TxDataContext';
+import { useCardanoData } from '../../context/CardanoContext';
 import { useWallet } from '../../context/WalletContext';
 import styles from '../../styles/WalletControls.module.css';
 
@@ -10,7 +10,7 @@ const CardanoCustomConnectButton: React.FC = () => {
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
   const [wallet, setWallet] = useState<any>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const { txData, setTxData } = useTxData();
+  const { cardanoData, setCardanoData } = useCardanoData();
   const { isCardanoConnected, setIsCardanoConnected, selectedBlockchain } = useWallet();
 
   useEffect(() => {
@@ -46,9 +46,6 @@ const CardanoCustomConnectButton: React.FC = () => {
       const connectedWallet = await BrowserWallet.enable(selectedWallet);
       setWallet(connectedWallet);
       setIsCardanoConnected(true);
-      localStorage.setItem('cardanoWalletConnected', 'true');
-      localStorage.setItem('cardanoSelectedWallet', selectedWallet);
-
       await updateWalletInfo(connectedWallet);
       await startLoginProcess(connectedWallet);
     }
@@ -58,7 +55,7 @@ const CardanoCustomConnectButton: React.FC = () => {
     const rewardAddresses = await connectedWallet.getRewardAddresses();
     const walletAddress = await connectedWallet.getUsedAddresses();
     const balance = await connectedWallet.getBalance();
-    setTxData((prevTxData) => ({
+    setCardanoData((prevTxData) => ({
       ...prevTxData,
       wallet: walletAddress[0],
       ada_wallet_stake_address: rewardAddresses[0],
@@ -113,11 +110,11 @@ const CardanoCustomConnectButton: React.FC = () => {
     if (response.ok) {
       const { token } = await response.json();
       console.log('Authentication successful, token received');
-      setTxData(prevTxData => ({
+      setCardanoData(prevTxData => ({
         ...prevTxData,
         authToken: token
       }));
-      localStorage.setItem('cardanoAuthToken', token);
+      
     } else {
       console.error('Authentication failed', await response.text());
     }
@@ -127,10 +124,7 @@ const CardanoCustomConnectButton: React.FC = () => {
     setWallet(null);
     setIsCardanoConnected(false);
     setSelectedWallet(null);
-    localStorage.removeItem('cardanoWalletConnected');
-    localStorage.removeItem('cardanoSelectedWallet');
-
-    setTxData((prevTxData) => ({
+    setCardanoData((prevTxData) => ({
       ...prevTxData,
       wallet: '',
       ada_wallet_stake_address: '',
@@ -139,7 +133,6 @@ const CardanoCustomConnectButton: React.FC = () => {
       authToken: null,
     }));
 
-    localStorage.removeItem('cardanoAuthToken');
   };
 
   const handleWalletChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -148,20 +141,13 @@ const CardanoCustomConnectButton: React.FC = () => {
       disconnectWallet();
     }
   };
-
-  useEffect(() => {
-    const storedWallet = localStorage.getItem('cardanoSelectedWallet');
-    if (storedWallet) {
-      setSelectedWallet(storedWallet);
-    }
-  }, []);
   
   return (
     <div className={styles.walletControls}>
       {isCardanoConnected ? (
         <>
           <p>{selectedWallet}</p>
-          {txData.authToken ? (
+          {cardanoData.authToken ? (
             <span className={`${styles.authStatus} ${styles.authenticated}`}>✓</span>
           ) : isAuthenticating ? (
             <span className={`${styles.authStatus} ${styles.authenticating}`}>Auth...</span>

@@ -6,7 +6,6 @@ import styles from '../../styles/TxBuilder.module.css';
 import { useWallet } from '../../context/WalletContext';
 import PolkadotWalletConnect from '../../components/Polkadot/PolkadotWalletConnect';
 import CardanoWalletConnect from '../../components/Cardano/CardanoWalletConnect';
-import { useTxData } from '../../context/TxDataContext';
 
 const PolkadotTxBuilder = dynamic(
   () => import('../../components/Polkadot/PolkadotTxBuilder'),
@@ -20,7 +19,6 @@ const CardanoTxBuilder = dynamic(
 
 export default function TxBuilder() {
   const { selectedBlockchain, polkadotWallet, isCardanoConnected } = useWallet();
-  const { txData } = useTxData();
 
   const { isConnected: isPolkadotConnected, balance: polkadotBalance } = polkadotWallet;
 

@@ -8,7 +8,14 @@ import {
   getAllGroups,
   getProjectsByGroup,
 } from '../utils/walletReg';
-import { useTxData } from '../context/TxDataContext';
+import { usePolkadotData, PolkadotData } from '../context/PolkadotContext';
+import { useCardanoData, CardanoData } from '../context/CardanoContext';
+
+interface ProjectDetailsFormProps {
+  walletAddress: string;
+  blockchain: 'Polkadot' | 'Cardano';
+  provider: string;
+}
 
 interface Group {
   id: string;
@@ -29,17 +36,10 @@ interface Project {
   project_settings: any | null;
 }
 
-interface ProjectDetailsFormProps {
-  walletAddress: string;
-  blockchain: string;
-  provider: string;
-}
+const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, blockchain, provider }) => {
+  const { polkadotData, setPolkadotData } = usePolkadotData();
+  const { cardanoData, setCardanoData } = useCardanoData();
 
-const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({
-  walletAddress,
-  blockchain,
-  provider,
-}) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -50,8 +50,32 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({
   const [isAddingNewProject, setIsAddingNewProject] = useState(false);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
-  const { txData, setTxData } = useTxData();
   const [error, setError] = useState<string | null>(null);
+
+  const getWalletData = () => {
+    if (blockchain === 'Polkadot') {
+      return {
+        setData: setPolkadotData,
+        data: polkadotData,
+      };
+    } else if (blockchain === 'Cardano') {
+      return {
+        setData: setCardanoData,
+        data: cardanoData,
+      };
+    }
+    throw new Error(`Unsupported blockchain: ${blockchain}`);
+  };
+
+  const { setData, data } = getWalletData();
+
+  const updateData = (updater: (prevData: PolkadotData | CardanoData) => Partial<PolkadotData | CardanoData>) => {
+    if (blockchain === 'Polkadot') {
+      setPolkadotData((prevData: PolkadotData) => ({ ...prevData, ...updater(prevData) }));
+    } else if (blockchain === 'Cardano') {
+      setCardanoData((prevData: CardanoData) => ({ ...prevData, ...updater(prevData) }));
+    }
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -63,8 +87,7 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({
           const projectData = await getProjectByWallet(walletAddress, blockchain);
           if (projectData && projectData.groups) {
             setProject(projectData);
-            setTxData((prevTxData) => ({
-              ...prevTxData,
+            updateData((prevData) => ({
               project_id: projectData.id,
               wallet: walletAddress,
               project: projectData.name,
@@ -138,29 +161,34 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({
     let groupId = selectedGroupId;
     let projectId = selectedProjectId;
 
-    if (isAddingNewGroup) {
-      const newGroup = await createGroup(newGroupName);
-      groupId = newGroup.id;
-    }
+    try {
+      if (isAddingNewGroup) {
+        const newGroup = await createGroup(newGroupName);
+        groupId = newGroup.id;
+      }
 
-    if (isAddingNewProject) {
-      const newProject = await createProject(groupId, newProjectName);
-      projectId = newProject.id;
-    }
+      if (isAddingNewProject) {
+        const newProject = await createProject(groupId, newProjectName);
+        projectId = newProject.id;
+      }
 
-    if (groupId && projectId) {
-      await addWalletToProject(projectId, walletAddress, blockchain);
-      const projectData = await getProjectByWallet(walletAddress, blockchain);
-      setProject(projectData);
-      setTxData((prevTxData) => ({
-        ...prevTxData,
-        project_id: projectData.id,
-        wallet: walletAddress,
-        project: projectData.name,
-      }));
+      if (groupId && projectId) {
+        await addWalletToProject(projectId, walletAddress, blockchain);
+        const projectData = await getProjectByWallet(walletAddress, blockchain);
+        setProject(projectData);
+        updateData((prevData) => ({
+          project_id: projectData.id,
+          wallet: walletAddress,
+          project: projectData.name,
+          group: projectData.groups.name,
+        }));
+      }
+    } catch (err) {
+      console.error('Error submitting project details:', err);
+      setError('An error occurred while submitting project details. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (loading) {
@@ -175,13 +203,15 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({
     return (
       <div>
         <h3>{project.groups?.name || 'Unknown Group'} - {project.name}</h3>
+        <p>Blockchain: {blockchain}</p>
+        <p>Wallet: {walletAddress}</p>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <p>Please select or create a group and project for {provider}:</p>
+      <p>Please select or create a group and project for {blockchain}:</p>
       <select value={selectedGroupId} onChange={handleGroupChange}>
         <option value="">Select Group</option>
         {groups.map((group) => (

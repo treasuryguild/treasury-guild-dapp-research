@@ -1,19 +1,19 @@
 // components/Polkadot/PolkadotTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import ContributionFormOptions from '../CollectContributions/ContributionFormOptions';
-import { useTxData } from '../../context/TxDataContext';
+import { usePolkadotData } from '../../context/PolkadotContext';
 import handleContributionSubmit from '../../utils/polkadot/handleContributionSubmit';
 import { generateBatchCalls } from '../../utils/polkadot/generateBatchCalls';
 import { checkWalletBalance } from '../../utils/polkadot/checkWalletBalance';
 
 export default function PolkadotTxBuilder() {
   const [wsProvider, setWsProvider] = useState('wss://ws.test.azero.dev');
-  const { txData, setTxData } = useTxData();
+  const { polkadotData, setPolkadotData } = usePolkadotData();
   const [transactionStatus, setTransactionStatus] = useState('idle');
 
   useEffect(() => {
     const updateProvider = async () => {
-      const { provider } = txData;
+      const { provider } = polkadotData;
       if (!provider) {
         console.error('Provider not found in txData');
         return;
@@ -22,9 +22,9 @@ export default function PolkadotTxBuilder() {
       setWsProvider(provider);
     };
     updateProvider();
-  }, [txData]);
+  }, [polkadotData]);
 
-  console.log("txData", txData);
+  console.log("polkadotData", polkadotData);
   
   return (
     <>
@@ -36,13 +36,13 @@ export default function PolkadotTxBuilder() {
             handleContributionSubmit(
               contributions,
               wsProvider,
-              txData,
-              (contributions, api, decimals, wallet) => generateBatchCalls(contributions, api, decimals, wallet, txData),
-              (token, requiredAmount) => checkWalletBalance(token, requiredAmount, txData.tokens),
+              polkadotData,
+              (contributions, api, decimals, wallet) => generateBatchCalls(contributions, api, decimals, wallet, polkadotData),
+              (token, requiredAmount) => checkWalletBalance(token, requiredAmount, polkadotData.tokens),
               setTransactionStatus
             )
           }
-          tokens={txData.tokens}
+          tokens={polkadotData.tokens}
         />
       )}
     </>

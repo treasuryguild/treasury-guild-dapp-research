@@ -1,6 +1,6 @@
 // components/Cardano/CardanoTransactions.tsx
 import React, { useState, useEffect } from 'react';
-import { useTxData } from '../../context/TxDataContext';
+import { useTxData } from '../../context/PolkadotContext';
 
 export default function CardanoTransactions() {
   const [accountAddress, setAccountAddress] = useState('');

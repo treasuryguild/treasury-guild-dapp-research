@@ -1,10 +1,9 @@
 // components/Cardano/CardanoTransactions.tsx
 import React, { useState, useEffect } from 'react';
-import { useTxData } from '../../context/PolkadotContext';
 
 export default function CardanoTransactions() {
   const [accountAddress, setAccountAddress] = useState('');
-  const { txData, setTxData } = useTxData();
+  
 
   let tokens = [
     { symbol: "ADA", 

@@ -2,6 +2,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { checkSignature } from '@meshsdk/core';
 import jwt from 'jsonwebtoken';
+import { supabaseAnon } from '../../../../lib/supabaseClient';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -17,10 +18,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // TODO: Retrieve the nonce from your database
-    // const nonce = await getNonceFromDatabase(userAddress);
-    const nonce = 'Sign to login in to Mesh: '; // Temporary placeholder
-    
+    // Retrieve the nonce from Supabase
+    const { data, error } = await supabaseAnon
+      .from('nonces')
+      .select('nonce')
+      .eq('user_address', userAddress)
+      .single();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: 'Nonce not found' });
+
+    const nonce = data.nonce;
 
     // Verify the signature using MeshJS
     const isValid = checkSignature(nonce, userAddress, signature);
@@ -32,8 +40,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // If signature is valid, create a JWT
     const token = jwt.sign({ address: userAddress }, JWT_SECRET, { expiresIn: '1d' });
 
-    // TODO: Update or delete the used nonce in your database
-    // await updateNonceInDatabase(userAddress);
+    // Delete the used nonce from Supabase
+    const { error: deleteError } = await supabaseAnon
+      .from('nonces')
+      .delete()
+      .eq('user_address', userAddress);
+
+    if (deleteError) throw deleteError;
 
     res.status(200).json({ token });
   } catch (error) {

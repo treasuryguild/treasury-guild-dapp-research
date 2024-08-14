@@ -1,6 +1,7 @@
 // pages/api/auth/cardano/nonce.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { generateNonce } from '@meshsdk/core';
+import { supabaseAnon } from '../../../../lib/supabaseClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -14,14 +15,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    //const nonce = generateNonce('Sign to login in to Mesh: ');
-    const nonce = 'Sign to login in to Mesh: ';
-    // TODO: Store the nonce in your database associated with the userAddress
-    // For example: await storeNonceInDatabase(userAddress, nonce);
+    const nonce = generateNonce('Sign to login in to Mesh: ');
+
+    // Store or update the nonce in Supabase
+    const { data, error } = await supabaseAnon
+      .from('nonces')
+      .upsert({ user_address: userAddress, nonce }, { onConflict: 'user_address' });
+
+    if (error) throw error;
 
     res.status(200).json({ nonce });
   } catch (error) {
-    console.error('Error generating nonce:', error);
+    console.error('Error generating or storing nonce:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 }

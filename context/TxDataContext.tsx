@@ -10,6 +10,7 @@ interface TxData {
   project_type:string;
   logo_url: string;
   wallet: string;
+  ada_wallet_stake_address: string;
   txHash: string;
   monthly_budget_balance: any;
   monthly_wallet_budget_string: string;
@@ -51,6 +52,7 @@ export const TxDataProvider: React.FC<TxDataProviderProps> = ({ children }) => {
     project_type:'',
     logo_url:'',
     wallet:'',
+    ada_wallet_stake_address:'',
     txHash:'',
     monthly_budget_balance: {},
     monthly_wallet_budget_string:'',

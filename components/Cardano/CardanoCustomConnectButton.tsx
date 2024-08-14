@@ -56,10 +56,12 @@ const CardanoCustomConnectButton: React.FC = () => {
 
   const updateWalletInfo = async (connectedWallet: any) => {
     const rewardAddresses = await connectedWallet.getRewardAddresses();
+    const walletAddress = await connectedWallet.getUsedAddresses();
     const balance = await connectedWallet.getBalance();
     setTxData((prevTxData) => ({
       ...prevTxData,
-      wallet: rewardAddresses[0],
+      wallet: walletAddress[0],
+      ada_wallet_stake_address: rewardAddresses[0],
       balance: balance,
       provider: 'Cardano',
     }));
@@ -131,6 +133,7 @@ const CardanoCustomConnectButton: React.FC = () => {
     setTxData((prevTxData) => ({
       ...prevTxData,
       wallet: '',
+      ada_wallet_stake_address: '',
       balance: '',
       provider: '',
       authToken: null,

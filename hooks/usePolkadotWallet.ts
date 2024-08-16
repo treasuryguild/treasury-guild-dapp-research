@@ -142,11 +142,11 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
   }, [isConnected, checkForWalletConnection]);
 
   const checkWalletStatusIfNeeded = async (finalBalance: any) => {
-    if (selectedAccount && api) {
+    if (selectedAccount && api && authToken) {
       const key = `${selectedAccount}-${selectedProvider}-${finalBalance}`;
       if (!walletStatusChecked.current[key]) {
         walletStatusChecked.current[key] = true;
-        await checkWalletStatus(api, selectedAccount, selectedProvider);
+        await checkWalletStatus(api, selectedAccount, selectedProvider, authToken);
       }
     }
   };

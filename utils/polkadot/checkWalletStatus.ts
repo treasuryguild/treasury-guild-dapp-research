@@ -1,7 +1,7 @@
 // utils/polkadot/checkWalletStatus.ts
 import { ApiPromise } from '@polkadot/api';
 import { PROVIDERS, SUBSCAN_URLS } from '../../constants/providers';
-import { supabasePublic } from '../../lib/supabaseClient';
+import { createSupabaseAuthClient, supabasePublic } from '../../lib/supabaseClient';
 
 async function getProjectIdByAddress(address: any) {
     const { data, error } = await supabasePublic
@@ -73,9 +73,11 @@ async function fetchTransactionDetails(subscanUrl: string, address: string) {
     return [];
 }
 
-export const checkWalletStatus = async (api: ApiPromise, accountAddress: string, selectedProvider: string) => {
+export const checkWalletStatus = async (api: ApiPromise, accountAddress: string, selectedProvider: string, authToken: string) => {
     console.log('Checking wallet status...');
     const projectId = await getProjectIdByAddress(accountAddress);
+    const supabaseAuthClient = createSupabaseAuthClient(authToken);
+
     try {
         if (!api) return [];
 
@@ -169,7 +171,7 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
 
                     try {
                         if (jsonData.project_id) {
-                            const { data, error } = await supabasePublic
+                            const { data, error } = await supabaseAuthClient
                                 .from('pending_transactions')
                                 .upsert(
                                     { 

@@ -1,10 +1,11 @@
 // utils/polkadot/handleContributionSubmit.ts
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
-import { supabaseAnon } from '../../lib/supabaseClient';
+import { SupabaseClient } from '@supabase/supabase-js';
 import updateTransactionTables from '../updateTransactionTables';
 
-const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
+const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
+
 
 interface Contribution {
   name: string;
@@ -30,7 +31,8 @@ export default async function handleContributionSubmit(
     wallet: string
   ) => Promise<{ batchCalls: any[]; jsonData: any }>,
   checkWalletBalance: (token: { token: string }, requiredAmount: number) => Promise<void>,
-  setTransactionStatus: (status: string) => void
+  setTransactionStatus: (status: string) => void,
+  supabaseAuthClient: SupabaseClient | null
 ) {
   if (typeof window === 'undefined') return null;
   await web3Enable('Your App Name');
@@ -99,13 +101,20 @@ export default async function handleContributionSubmit(
       if (status.isFinalized) {
         if (TESTING_MODE) {
           try {
-            await updateTransactionTables(jsonData);
+            await updateTransactionTables(jsonData, supabaseAuthClient);
             console.log('Transaction tables updated successfully');
           } catch (error) {
             console.error('Error updating transaction tables:', error);
           }
         } else {
-          const { data, error } = await supabaseAnon.from('pending_transactions').insert([{ json_data: jsonData, hash: jsonData.transactionHash}]);
+          if (!supabaseAuthClient) {
+            console.error('Supabase authenticated client not available');
+            return;
+          }
+
+          const { data, error } = await supabaseAuthClient
+            .from('pending_transactions')
+            .insert([{ json_data: jsonData, hash: jsonData.transactionHash }]);
 
           if (error) {
             console.error('Error inserting pending transaction:', error);

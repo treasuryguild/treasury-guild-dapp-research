@@ -1,10 +1,14 @@
 // ../functions/processTransaction.js
+import { createClient } from '@supabase/supabase-js';
 import updateTransactionTables from '../utils/updateTransactionTables';
-import { supabaseAnon } from '../lib/supabaseClient';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function handler(event, context) {
   const contentType = event.headers['content-type'];
-  // Check if the content type is JSON
   if (contentType !== 'application/json') {
     return {
       statusCode: 400,
@@ -16,8 +20,8 @@ export async function handler(event, context) {
   const jsonData = record.json_data;
 
   try {
-    await updateTransactionTables(jsonData);
-    await supabaseAnon
+    await updateTransactionTables(jsonData, supabaseAdmin);
+    await supabaseAdmin
       .from('pending_transactions')
       .update({ processed: true })
       .eq('id', record.id);

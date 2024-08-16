@@ -1,10 +1,10 @@
 // utils/polkadot/checkWalletStatus.ts
 import { ApiPromise } from '@polkadot/api';
 import { PROVIDERS, SUBSCAN_URLS } from '../../constants/providers';
-import { supabaseAnon } from '../../lib/supabaseClient';
+import { supabasePublic } from '../../lib/supabaseClient';
 
 async function getProjectIdByAddress(address: any) {
-    const { data, error } = await supabaseAnon
+    const { data, error } = await supabasePublic
       .from('wallets')
       .select('project_id')
       .eq('address', address)
@@ -27,11 +27,11 @@ function formatDate(timestamp: any) {
 }
 
 async function getExistingTransactionHashes() {
-    const { data: transactions, error: transactionsError } = await supabaseAnon
+    const { data: transactions, error: transactionsError } = await supabasePublic
         .from('transactions')
         .select('hash');
 
-    const { data: pendingTransactions, error: pendingTransactionsError } = await supabaseAnon
+    const { data: pendingTransactions, error: pendingTransactionsError } = await supabasePublic
         .from('pending_transactions')
         .select('hash');
 
@@ -169,7 +169,7 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
 
                     try {
                         if (jsonData.project_id) {
-                            const { data, error } = await supabaseAnon
+                            const { data, error } = await supabasePublic
                                 .from('pending_transactions')
                                 .upsert(
                                     { 

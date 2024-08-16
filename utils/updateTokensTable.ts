@@ -1,10 +1,10 @@
 // utils/updateTokensTable.ts
-import { supabaseAnon } from '../lib/supabaseClient';
+import { supabasePublic } from '../lib/supabaseClient';
 
 export const updateTokensTable = async (tokens: any[]) => {
     try {
       for (const token of tokens) {
-        const { data: existingTokens, error: tokenError } = await supabaseAnon
+        const { data: existingTokens, error: tokenError } = await supabasePublic
           .from('tokens')
           .select('*')
           .eq('symbol', token.symbol)
@@ -13,7 +13,7 @@ export const updateTokensTable = async (tokens: any[]) => {
         if (tokenError) {
           console.error('Error checking token existence:', tokenError);
         } else if (existingTokens.length === 0) {
-          const { data: newToken, error: insertError } = await supabaseAnon
+          const { data: newToken, error: insertError } = await supabasePublic
             .from('tokens')
             .insert([
               {

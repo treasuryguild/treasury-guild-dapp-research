@@ -2,7 +2,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { checkSignature } from '@meshsdk/core';
 import jwt from 'jsonwebtoken';
-import { supabaseAnon } from '../../../../lib/supabaseClient';
+import { supabasePublic } from '../../../../lib/supabaseClient';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Retrieve the nonce from Supabase
-    const { data, error } = await supabaseAnon
+    const { data, error } = await supabasePublic
       .from('nonces')
       .select('nonce')
       .eq('user_address', userAddress)
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const token = jwt.sign({ address: userAddress }, JWT_SECRET, { expiresIn: '1d' });
 
     // Delete the used nonce from Supabase
-    const { error: deleteError } = await supabaseAnon
+    const { error: deleteError } = await supabasePublic
       .from('nonces')
       .delete()
       .eq('user_address', userAddress);

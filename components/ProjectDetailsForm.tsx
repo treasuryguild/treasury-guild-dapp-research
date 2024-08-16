@@ -203,8 +203,6 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, 
     return (
       <div>
         <h3>{project.groups?.name || 'Unknown Group'} - {project.name}</h3>
-        <p>Blockchain: {blockchain}</p>
-        <p>Wallet: {walletAddress}</p>
       </div>
     );
   }

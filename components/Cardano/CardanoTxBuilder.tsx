@@ -1,15 +1,16 @@
 // components/Cardano/CardanoTxBuilder.tsx
 import React, { useState, useEffect } from 'react';
-import ContributionForms from '../CollectContributions/ContributionFormOptions';
+import ContributionFormOptions from '../CollectContributions/ContributionFormOptions';
 import { useCardanoData } from '../../context/CardanoContext';
+import { useWallet } from '../../context/WalletContext';
 
 export default function CardanoTxBuilder() {
   const [accountAddress, setAccountAddress] = useState('');
   const { cardanoData, setCardanoData } = useCardanoData();
-  const [activeForm, setActiveForm] = useState('contribution');
+  const { cardanoWallet, supabaseAuthClient } = useWallet();
 
-  const handleContributionSubmit = async (contributions: any) => {
-    console.log('Submitting contributions:', contributions);
+  const handleContributionSubmit = async (contributions: any, cardanoData: any, supabaseAuthClient: any) => {
+    console.log('Submitting contributions:', contributions, cardanoData);
   };  
 
   let tokens = [
@@ -33,6 +34,15 @@ export default function CardanoTxBuilder() {
     console.log("CardanoData", cardanoData);
     
     return (
-      <ContributionForms onContributionSubmit={handleContributionSubmit} tokens={tokens} />
+      <ContributionFormOptions
+          onContributionSubmit={(contributions) =>
+            handleContributionSubmit(
+              contributions,
+              cardanoData,
+              supabaseAuthClient
+            )
+          }
+          tokens={tokens}
+        />
     );
   }

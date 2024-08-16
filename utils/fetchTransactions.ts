@@ -1,5 +1,5 @@
 // utils/fetchTransactions.ts
-import { supabaseAnon } from '../lib/supabaseClient';
+import { supabasePublic } from '../lib/supabaseClient';
 
 export interface Transaction {
   id: string;
@@ -28,7 +28,7 @@ export interface Transaction {
 export async function fetchAllTransactions(address: string): Promise<Transaction[]> {
   try {
     // Fetch outgoing transactions
-    const { data: outgoingData, error: outgoingError } = await supabaseAnon
+    const { data: outgoingData, error: outgoingError } = await supabasePublic
       .from('transactions')
       .select('*')
       .eq('from_address', address);
@@ -39,7 +39,7 @@ export async function fetchAllTransactions(address: string): Promise<Transaction
     }
 
     // Fetch incoming transactions
-    const { data: incomingData, error: incomingError } = await supabaseAnon
+    const { data: incomingData, error: incomingError } = await supabasePublic
       .from('transaction_outputs')
       .select(`
         transactions:transaction_id (

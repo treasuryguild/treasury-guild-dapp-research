@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchProjectBoardDetails } from '../../services/githubApi';
 import { usePolkadotData } from '../../context/PolkadotContext';
-import { supabaseAnon } from '../../lib/supabaseClient';
+import { supabasePublic } from '../../lib/supabaseClient';
 import styles from '../../styles/GitHubProjectBoardForm.module.css';
 import CustomizableProjectTable from './CustomizableProjectTable';
 
@@ -39,7 +39,7 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
 
   useEffect(() => {
     const fetchProject = async () => {
-      const { data, error } = await supabaseAnon
+      const { data, error } = await supabasePublic
         .from('projects')
         .select('*')
         .eq('id', polkadotData.project_id)
@@ -94,7 +94,7 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
           boards: [...(project.project_settings.boards || []), newBoard],
         };
 
-        const { data, error } = await supabaseAnon
+        const { data, error } = await supabasePublic
           .from('projects')
           .update({ project_settings: updatedSettings })
           .eq('id', polkadotData.project_id);
@@ -105,7 +105,7 @@ export default function GitHubProjectBoardForm({ onSubmit, tokens }: GitHubProje
 
         setProject({ ...project, project_settings: updatedSettings });
       } else {
-        const { data, error }: any = await supabaseAnon.from('projects').insert([
+        const { data, error }: any = await supabasePublic.from('projects').insert([
           {
             name: `Project Board ${projectNumber}`,
             group_id: polkadotData.group,

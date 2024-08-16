@@ -1,10 +1,9 @@
 // updateTransactionTables.js
-import { supabaseAnon } from '../lib/supabaseClient';
 import { transformContributionsToMetadata } from '../utils/transformContributionsMetadata';
 
-async function getOrCreateTokens(tokens) {
+async function getOrCreateTokens(tokens, supabaseClient) {
   const tokenNames = tokens.map(token => token.name);
-  const { data: existingTokens, error: selectError } = await supabaseAnon
+  const { data: existingTokens, error: selectError } = await supabaseClient
     .from('tokens')
     .select('id, name')
     .in('name', tokenNames);
@@ -18,7 +17,7 @@ async function getOrCreateTokens(tokens) {
   const newTokens = tokens.filter(token => !existingTokenMap.has(token.name));
 
   if (newTokens.length > 0) {
-    const { data: insertedTokens, error: insertError } = await supabaseAnon
+    const { data: insertedTokens, error: insertError } = await supabaseClient
       .from('tokens')
       .insert(newTokens.map(token => ({
         symbol: token.symbol,
@@ -39,8 +38,8 @@ async function getOrCreateTokens(tokens) {
   return existingTokenMap;
 }
 
-async function getOrCreateExternalWallets(addresses) {
-  const { data: existingWallets, error: selectError } = await supabaseAnon
+async function getOrCreateExternalWallets(addresses, supabaseClient) {
+  const { data: existingWallets, error: selectError } = await supabaseClient
     .from('external_wallets')
     .select('id, address')
     .in('address', addresses);
@@ -54,7 +53,7 @@ async function getOrCreateExternalWallets(addresses) {
   const newAddresses = addresses.filter(address => !existingWalletMap.has(address));
 
   if (newAddresses.length > 0) {
-    const { data: insertedWallets, error: insertError } = await supabaseAnon
+    const { data: insertedWallets, error: insertError } = await supabaseClient
       .from('external_wallets')
       .insert(newAddresses.map(address => ({ address })))
       .select('id, address');
@@ -82,7 +81,7 @@ function removeDuplicateContributions(contributions) {
   return Object.values(uniqueContributions);
 }
 
-export default async function updateTransactionTables(jsonData) {
+export default async function updateTransactionTables(jsonData, supabaseClient) {
   const { transactionHash, blockNumber, fromAddress, toAddress, success, fee, project_id, network, contributions = [], tx_type } = jsonData;
 
   const uniqueContributions = removeDuplicateContributions(contributions);
@@ -106,7 +105,8 @@ export default async function updateTransactionTables(jsonData) {
 
   try {
     // Start a transaction
-    await supabaseAnon.rpc('begin');
+    const { error: beginError } = await supabaseClient.rpc('begin');
+    if (beginError) throw beginError;
 
     const allTokens = contributions.flatMap(contribution =>
       contribution.inputs.flatMap(input =>
@@ -123,11 +123,11 @@ export default async function updateTransactionTables(jsonData) {
     );
 
     const [tokenMap, externalWalletMap] = await Promise.all([
-      getOrCreateTokens(allTokens),
-      getOrCreateExternalWallets(allExternalAddresses)
+      getOrCreateTokens(allTokens, supabaseClient),
+      getOrCreateExternalWallets(allExternalAddresses, supabaseClient)
     ]);
 
-    const { data: insertedTransaction, error: transactionError } = await supabaseAnon
+    const { data: insertedTransaction, error: transactionError } = await supabaseClient
     .from('transactions')
     .insert({
       ...transactionData,
@@ -153,7 +153,7 @@ export default async function updateTransactionTables(jsonData) {
         task_date: contribution.taskDate
       }));
 
-      const { data: insertedContributions, error: contributionError } = await supabaseAnon
+      const { data: insertedContributions, error: contributionError } = await supabaseClient
         .from('contributions')
         .insert(contributionData)
         .select('id');
@@ -209,7 +209,7 @@ export default async function updateTransactionTables(jsonData) {
       });
 
       if (inputData.length > 0) {
-        const { error: inputsError } = await supabaseAnon
+        const { error: inputsError } = await supabaseClient
           .from('transaction_inputs')
           .insert(inputData);
 
@@ -220,7 +220,7 @@ export default async function updateTransactionTables(jsonData) {
       }
 
       if (outputData.length > 0) {
-        const { error: outputsError } = await supabaseAnon
+        const { error: outputsError } = await supabaseClient
           .from('transaction_outputs')
           .insert(outputData);
 
@@ -234,10 +234,14 @@ export default async function updateTransactionTables(jsonData) {
     console.log('Transaction tables updated successfully');
 
     // Commit the transaction
-    await supabaseAnon.rpc('commit');
+    const { error: commitError } = await supabaseClient.rpc('commit');
+    if (commitError) throw commitError;
+
   } catch (error) {
     // Rollback the transaction in case of an error
-    await supabaseAnon.rpc('rollback');
+    const { error: rollbackError } = await supabaseClient.rpc('rollback');
+    if (rollbackError) console.error('Error rolling back transaction:', rollbackError);
+
     console.error('Error updating transaction tables:', error);
     throw error;
   }

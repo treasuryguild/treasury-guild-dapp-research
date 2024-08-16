@@ -1,5 +1,5 @@
 // utils/walletReg.js
-import { supabaseAnon } from '../lib/supabaseClient';
+import { supabasePublic } from '../lib/supabaseClient';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -16,7 +16,7 @@ const retry = async (fn, retries = MAX_RETRIES, delay = RETRY_DELAY) => {
 
 export const checkWalletExists = async (walletAddress, blockchain) => {
   return retry(async () => {
-    const { data, error } = await supabaseAnon
+    const { data, error } = await supabasePublic
       .from('wallets')
       .select('*')
       .eq('address', walletAddress)
@@ -29,7 +29,7 @@ export const checkWalletExists = async (walletAddress, blockchain) => {
 
 export const getProjectByWallet = async (walletAddress, blockchain) => {
   return retry(async () => {
-    const { data: walletData, error: walletError } = await supabaseAnon
+    const { data: walletData, error: walletError } = await supabasePublic
       .from('wallets')
       .select('project_id')
       .eq('address', walletAddress)
@@ -39,7 +39,7 @@ export const getProjectByWallet = async (walletAddress, blockchain) => {
     if (walletError) throw walletError;
     if (!walletData) return null;
 
-    const { data: projectData, error: projectError } = await supabaseAnon
+    const { data: projectData, error: projectError } = await supabasePublic
       .from('projects')
       .select('*, groups(*)')
       .eq('id', walletData.project_id)
@@ -51,7 +51,7 @@ export const getProjectByWallet = async (walletAddress, blockchain) => {
 };
 
 export const createGroup = async (groupName) => {
-  const { data, error } = await supabaseAnon
+  const { data, error } = await supabasePublic
     .from('groups')
     .insert({ name: groupName })
     .single()
@@ -66,7 +66,7 @@ export const createGroup = async (groupName) => {
 };
 
 export const createProject = async (groupId, projectName) => {
-  const { data, error } = await supabaseAnon
+  const { data, error } = await supabasePublic
     .from('projects')
     .insert({ group_id: groupId, name: projectName })
     .single()
@@ -81,7 +81,7 @@ export const createProject = async (groupId, projectName) => {
 };
 
 export const addWalletToProject = async (projectId, walletAddress, blockchain) => {
-  const { data, error } = await supabaseAnon.from('wallets').insert({
+  const { data, error } = await supabasePublic.from('wallets').insert({
     project_id: projectId,
     address: walletAddress,
     blockchain: blockchain,
@@ -93,7 +93,7 @@ export const addWalletToProject = async (projectId, walletAddress, blockchain) =
 };
 
 export const getAllGroups = async () => {
-  const { data, error } = await supabaseAnon
+  const { data, error } = await supabasePublic
     .from('groups')
     .select('*')
     .order('name');
@@ -107,7 +107,7 @@ export const getAllGroups = async () => {
 };
 
 export const getProjectsByGroup = async (groupId) => {
-  const { data, error } = await supabaseAnon
+  const { data, error } = await supabasePublic
     .from('projects')
     .select('*')
     .eq('group_id', groupId)

@@ -4,7 +4,7 @@ import { web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
 import { SupabaseClient } from '@supabase/supabase-js';
 import updateTransactionTables from '../updateTransactionTables';
 
-const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
+const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'false';
 
 
 interface Contribution {
@@ -114,7 +114,11 @@ export default async function handleContributionSubmit(
 
           const { data, error } = await supabaseAuthClient
             .from('pending_transactions')
-            .insert([{ json_data: jsonData, hash: jsonData.transactionHash }]);
+            .insert([{ 
+              json_data: jsonData, 
+              hash: jsonData.transactionHash, 
+              wallet_address: txData.wallet 
+            }]);
 
           if (error) {
             console.error('Error inserting pending transaction:', error);

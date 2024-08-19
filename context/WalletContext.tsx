@@ -1,3 +1,4 @@
+// context/WalletContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usePolkadotWallet } from '../hooks/usePolkadotWallet';
 import { useWallet as useMeshWallet } from '@meshsdk/react';
@@ -12,6 +13,7 @@ interface WalletContextType {
   isCardanoConnected: boolean;
   setIsCardanoConnected: (connected: boolean) => void;
   supabaseAuthClient: SupabaseClient | null;
+  setSupabaseAuthClient: (client: SupabaseClient | null) => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isPolkadotConnected, setIsPolkadotConnected] = useState<boolean>(false);
   const [isCardanoConnected, setIsCardanoConnected] = useState<boolean>(false);
   const [supabaseAuthClient, setSupabaseAuthClient] = useState<SupabaseClient | null>(null);
+  const [cardanoAuthToken, setCardanoAuthToken] = useState<string | null>(null);
 
   const cardanoWallet = useMeshWallet();
   const polkadotWallet = usePolkadotWallet(isPolkadotConnected, setIsPolkadotConnected);
@@ -41,13 +44,14 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [selectedBlockchain]);
 
   useEffect(() => {
-    if (polkadotWallet.authToken) {
-      const client = createSupabaseAuthClient(polkadotWallet.authToken);
+    const token = polkadotWallet.authToken || cardanoAuthToken;
+    if (token) {
+      const client = createSupabaseAuthClient(token);
       setSupabaseAuthClient(client);
     } else {
       setSupabaseAuthClient(null);
     }
-  }, [polkadotWallet.authToken]);
+  }, [polkadotWallet.authToken, cardanoAuthToken]);
 
   return (
     <WalletContext.Provider value={{
@@ -57,7 +61,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       cardanoWallet,
       isCardanoConnected,
       setIsCardanoConnected,
-      supabaseAuthClient
+      supabaseAuthClient,
+      setSupabaseAuthClient
     }}>
       {children}
     </WalletContext.Provider>

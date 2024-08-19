@@ -1,5 +1,6 @@
 // ../components/Cardano/CardanoCustomConnectButton.tsx
 import React, { useState, useEffect } from 'react';
+import { createSupabaseAuthClient } from '../../lib/supabaseClient';
 import { BrowserWallet } from '@meshsdk/core';
 import { useCardanoData } from '../../context/CardanoContext';
 import { useWallet } from '../../context/WalletContext';
@@ -12,6 +13,7 @@ const CardanoCustomConnectButton: React.FC = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { cardanoData, setCardanoData } = useCardanoData();
   const { isCardanoConnected, setIsCardanoConnected, selectedBlockchain } = useWallet();
+  const { setSupabaseAuthClient } = useWallet();
 
   useEffect(() => {
     const getWallets = async () => {
@@ -115,6 +117,8 @@ const CardanoCustomConnectButton: React.FC = () => {
         authToken: token
       }));
       
+      const supabase = createSupabaseAuthClient(token);
+      setSupabaseAuthClient(supabase);
     } else {
       console.error('Authentication failed', await response.text());
     }

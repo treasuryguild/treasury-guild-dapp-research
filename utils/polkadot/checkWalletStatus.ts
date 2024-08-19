@@ -176,7 +176,8 @@ export const checkWalletStatus = async (api: ApiPromise, accountAddress: string,
                                 .upsert(
                                     { 
                                         hash: jsonData.transactionHash, 
-                                        json_data: jsonData 
+                                        json_data: jsonData,
+                                        wallet_address: accountAddress 
                                     },
                                     { 
                                         onConflict: 'hash',

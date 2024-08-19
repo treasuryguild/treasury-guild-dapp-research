@@ -26,7 +26,7 @@ export default function PolkadotTxBuilder() {
     updateProvider();
   }, [polkadotData]);
 
-  console.log("polkadotData", polkadotData);
+  console.log("polkadotData", polkadotData, supabaseAuthClient);
   
   return (
     <>

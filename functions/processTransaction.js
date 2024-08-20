@@ -5,7 +5,12 @@ import updateTransactionTables from '../utils/updateTransactionTables';
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export async function handler(event, context) {
   const contentType = event.headers['content-type'];
@@ -20,11 +25,17 @@ export async function handler(event, context) {
   const jsonData = record.json_data;
 
   try {
+    // Explicitly set the role to bypass RLS
+    await supabaseAdmin.auth.setAuth(supabaseServiceRoleKey);
+
     await updateTransactionTables(jsonData, supabaseAdmin);
-    await supabaseAdmin
+    
+    const { error } = await supabaseAdmin
       .from('pending_transactions')
       .update({ processed: true })
       .eq('id', record.id);
+
+    if (error) throw error;
 
     console.log('Transaction processed successfully:', record.id);
     return {

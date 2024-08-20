@@ -1,5 +1,5 @@
 // utils/walletReg.js
-import { createSupabaseAuthClient, supabasePublic } from '../lib/supabaseClient';
+import { createSupabaseAuthClient } from '../lib/supabaseClient';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -14,9 +14,17 @@ const retry = async (fn, retries = MAX_RETRIES, delay = RETRY_DELAY) => {
   }
 };
 
-export const checkWalletExists = async (walletAddress, blockchain) => {
+const getAuthenticatedClient = (token) => {
+  if (!token) {
+    throw new Error('No authentication token provided');
+  }
+  return createSupabaseAuthClient(token);
+};
+
+export const checkWalletExists = async (token, walletAddress, blockchain) => {
   return retry(async () => {
-    const { data, error } = await supabasePublic
+    const supabase = getAuthenticatedClient(token);
+    const { data, error } = await supabase
       .from('wallets')
       .select('*')
       .eq('address', walletAddress)
@@ -27,9 +35,10 @@ export const checkWalletExists = async (walletAddress, blockchain) => {
   });
 };
 
-export const getProjectByWallet = async (walletAddress, blockchain) => {
+export const getProjectByWallet = async (token, walletAddress, blockchain) => {
   return retry(async () => {
-    const { data: walletData, error: walletError } = await supabasePublic
+    const supabase = getAuthenticatedClient(token);
+    const { data: walletData, error: walletError } = await supabase
       .from('wallets')
       .select('project_id')
       .eq('address', walletAddress)
@@ -39,7 +48,7 @@ export const getProjectByWallet = async (walletAddress, blockchain) => {
     if (walletError) throw walletError;
     if (!walletData) return null;
 
-    const { data: projectData, error: projectError } = await supabasePublic
+    const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .select('*, groups(*)')
       .eq('id', walletData.project_id)
@@ -50,8 +59,9 @@ export const getProjectByWallet = async (walletAddress, blockchain) => {
   });
 };
 
-export const createGroup = async (groupName) => {
-  const { data, error } = await supabasePublic
+export const createGroup = async (token, groupName) => {
+  const supabase = getAuthenticatedClient(token);
+  const { data, error } = await supabase
     .from('groups')
     .insert({ name: groupName })
     .single()
@@ -65,8 +75,9 @@ export const createGroup = async (groupName) => {
   return data;
 };
 
-export const createProject = async (groupId, projectName) => {
-  const { data, error } = await supabasePublic
+export const createProject = async (token, groupId, projectName) => {
+  const supabase = getAuthenticatedClient(token);
+  const { data, error } = await supabase
     .from('projects')
     .insert({ group_id: groupId, name: projectName })
     .single()
@@ -80,20 +91,24 @@ export const createProject = async (groupId, projectName) => {
   return data;
 };
 
-export const addWalletToProject = async (projectId, walletAddress, blockchain) => {
-  const { data, error } = await supabasePublic.from('wallets').insert({
-    project_id: projectId,
-    address: walletAddress,
-    blockchain: blockchain,
-  });
+export const addWalletToProject = async (token, projectId, walletAddress, blockchain) => {
+  const supabase = getAuthenticatedClient(token);
+  const { data, error } = await supabase
+    .from('wallets')
+    .insert({
+      project_id: projectId,
+      address: walletAddress,
+      blockchain: blockchain,
+    });
 
   if (error) {
     console.error('Error adding wallet to project:', error);
   }
 };
 
-export const getAllGroups = async () => {
-  const { data, error } = await supabasePublic
+export const getAllGroups = async (token) => {
+  const supabase = getAuthenticatedClient(token);
+  const { data, error } = await supabase
     .from('groups')
     .select('*')
     .order('name');
@@ -106,8 +121,9 @@ export const getAllGroups = async () => {
   return data;
 };
 
-export const getProjectsByGroup = async (groupId) => {
-  const { data, error } = await supabasePublic
+export const getProjectsByGroup = async (token, groupId) => {
+  const supabase = getAuthenticatedClient(token);
+  const { data, error } = await supabase
     .from('projects')
     .select('*')
     .eq('group_id', groupId)

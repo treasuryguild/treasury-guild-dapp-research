@@ -13,6 +13,8 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 });
 
 export async function handler(event, context) {
+  console.log('Received event:', JSON.stringify(event, null, 2));
+  console.log('Event body:', event.body);
   const contentType = event.headers['content-type'];
   if (contentType !== 'application/json') {
     return {

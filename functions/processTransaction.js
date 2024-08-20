@@ -20,35 +20,37 @@ export async function handler(event, context) {
   let jsonData;
   try {
     // Check if the body is already an object
-    if (typeof event.body === 'object') {
+    if (typeof event.body === 'object' && event.body !== null) {
       jsonData = event.body;
-    } else {
+    } else if (typeof event.body === 'string') {
       // If it's a string, try to parse it
       jsonData = JSON.parse(event.body);
+    } else {
+      throw new Error(`Unexpected event.body type: ${typeof event.body}`);
     }
     console.log('Processed JSON data:', JSON.stringify(jsonData, null, 2));
   } catch (error) {
     console.error('Error processing JSON:', error);
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid JSON in request body' })
+      body: JSON.stringify({ error: 'Invalid JSON in request body', details: error.message })
     };
   }
 
   try {
-    // Explicitly set the role to bypass RLS
-    await supabaseAdmin.auth.setAuth(supabaseServiceRoleKey);
+    // The service role key is already set when creating the client,
+    // so we don't need to set it explicitly for each request
 
-    await updateTransactionTables(jsonData, supabaseAdmin);
+    await updateTransactionTables(jsonData.record.json_data, supabaseAdmin);
     
     const { error } = await supabaseAdmin
       .from('pending_transactions')
       .update({ processed: true })
-      .eq('id', record.id);
+      .eq('id', jsonData.record.id);
 
     if (error) throw error;
 
-    console.log('Transaction processed successfully:', record.id);
+    console.log('Transaction processed successfully:', jsonData.record.id);
     return {
       statusCode: 200,
       body: JSON.stringify({ message: 'Transaction processed successfully' }),
@@ -57,7 +59,7 @@ export async function handler(event, context) {
     console.error('Error processing transaction:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Error processing transaction' }),
+      body: JSON.stringify({ error: 'Error processing transaction', details: error.message }),
     };
   }
 }

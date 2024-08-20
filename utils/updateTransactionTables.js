@@ -104,10 +104,6 @@ export default async function updateTransactionTables(jsonData, supabaseClient) 
   };
 
   try {
-    // Start a transaction
-    const { error: beginError } = await supabaseClient.rpc('begin');
-    if (beginError) throw beginError;
-
     const allTokens = contributions.flatMap(contribution =>
       contribution.inputs.flatMap(input =>
         input.tokens.map(token => token.token)
@@ -128,19 +124,16 @@ export default async function updateTransactionTables(jsonData, supabaseClient) 
     ]);
 
     const { data: insertedTransaction, error: transactionError } = await supabaseClient
-    .from('transactions')
-    .insert({
-      ...transactionData,
-      data: {
-        ...transactionData
-      }
-    })
-    .select('id');
+      .from('transactions')
+      .insert({
+        ...transactionData,
+        data: {
+          ...transactionData
+        }
+      })
+      .select('id');
 
-    if (transactionError) {
-      console.error('Error inserting transaction:', transactionError);
-      throw transactionError;
-    }
+    if (transactionError) throw transactionError;
 
     transactionData.id = insertedTransaction[0].id;
 
@@ -158,10 +151,7 @@ export default async function updateTransactionTables(jsonData, supabaseClient) 
         .insert(contributionData)
         .select('id');
 
-      if (contributionError) {
-        console.error('Error inserting contributions:', contributionError);
-        throw contributionError;
-      }
+      if (contributionError) throw contributionError;
 
       const contributionIds = insertedContributions.map(contribution => contribution.id);
 
@@ -213,10 +203,7 @@ export default async function updateTransactionTables(jsonData, supabaseClient) 
           .from('transaction_inputs')
           .insert(inputData);
 
-        if (inputsError) {
-          console.error('Error inserting transaction inputs:', inputsError);
-          throw inputsError;
-        }
+        if (inputsError) throw inputsError;
       }
 
       if (outputData.length > 0) {
@@ -224,24 +211,12 @@ export default async function updateTransactionTables(jsonData, supabaseClient) 
           .from('transaction_outputs')
           .insert(outputData);
 
-        if (outputsError) {
-          console.error('Error inserting transaction outputs:', outputsError);
-          throw outputsError;
-        }
+        if (outputsError) throw outputsError;
       }
     }
 
     console.log('Transaction tables updated successfully');
-
-    // Commit the transaction
-    const { error: commitError } = await supabaseClient.rpc('commit');
-    if (commitError) throw commitError;
-
   } catch (error) {
-    // Rollback the transaction in case of an error
-    const { error: rollbackError } = await supabaseClient.rpc('rollback');
-    if (rollbackError) console.error('Error rolling back transaction:', rollbackError);
-
     console.error('Error updating transaction tables:', error);
     throw error;
   }

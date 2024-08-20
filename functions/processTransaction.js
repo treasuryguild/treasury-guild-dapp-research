@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import updateTransactionTables from '../utils/updateTransactionTables';
 
-const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {

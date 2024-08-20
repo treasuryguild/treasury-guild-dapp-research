@@ -1,5 +1,5 @@
 // utils/walletReg.js
-import { supabasePublic } from '../lib/supabaseClient';
+import { createSupabaseAuthClient, supabasePublic } from '../lib/supabaseClient';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second

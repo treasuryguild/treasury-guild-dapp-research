@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  checkWalletExists,
   getProjectByWallet,
   createGroup,
   createProject,
@@ -15,6 +14,7 @@ interface ProjectDetailsFormProps {
   walletAddress: string;
   blockchain: 'Polkadot' | 'Cardano';
   provider: string;
+  token: string;
 }
 
 interface Group {
@@ -36,7 +36,7 @@ interface Project {
   project_settings: any | null;
 }
 
-const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, blockchain, provider }) => {
+const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, blockchain, provider, token }) => {
   const { polkadotData, setPolkadotData } = usePolkadotData();
   const { cardanoData, setCardanoData } = useCardanoData();
 
@@ -77,50 +77,48 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, 
     }
   };
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const walletExists = await checkWalletExists(walletAddress, blockchain);
-        if (walletExists) {
-          const projectData = await getProjectByWallet(walletAddress, blockchain);
-          if (projectData && projectData.groups) {
-            setProject(projectData);
-            updateData((prevData) => ({
-              project_id: projectData.id,
-              wallet: walletAddress,
-              project: projectData.name,
-              group: projectData.groups.name,
-              provider: provider,
-            }));
-          } else {
-            console.error('Project data or group information is missing');
-            setProject(null);
-            setError('Failed to fetch project details. Please try again.');
-          }
-        } else {
-          setProject(null);
-          const fetchedGroups = await getAllGroups();
-          setGroups(fetchedGroups);
-        }
-      } catch (err) {
-        console.error('Error fetching initial data:', err);
-        setError('An error occurred while fetching data. Please try again.');
-      } finally {
-        setLoading(false);
+  const fetchInitialData = useCallback(async () => {
+    console.log("Fetching initial data...");
+    setLoading(true);
+    setError(null);
+    try {
+      const projectData = await getProjectByWallet(token, walletAddress, blockchain);
+      console.log("Project data:", projectData);
+      if (projectData && projectData.groups) {
+        setProject(projectData);
+        updateData((prevData) => ({
+          project_id: projectData.id,
+          wallet: walletAddress,
+          project: projectData.name,
+          group: projectData.groups.name,
+          provider: provider,
+        }));
+      } else {
+        console.log('No existing project found. Fetching groups...');
+        setProject(null);
+        const fetchedGroups = await getAllGroups(token);
+        console.log("Fetched groups:", fetchedGroups);
+        setGroups(fetchedGroups);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching initial data:', err);
+      setError('An error occurred while fetching data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token, walletAddress, blockchain, provider]);
 
-    if (walletAddress) {
+  useEffect(() => {
+    if (token && walletAddress) {
       fetchInitialData();
     }
-  }, [walletAddress, blockchain, provider]);
+  }, [fetchInitialData, token, walletAddress]);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      if (selectedGroupId && selectedGroupId !== 'new') {
-        const fetchedProjects = await getProjectsByGroup(selectedGroupId);
+      if (selectedGroupId && token && selectedGroupId !== 'new') {
+        const fetchedProjects = await getProjectsByGroup(token, selectedGroupId);
+        console.log("Fetched projects:", fetchedProjects);
         setProjects(fetchedProjects);
       } else {
         setProjects([]);
@@ -128,7 +126,7 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, 
     };
 
     fetchProjects();
-  }, [selectedGroupId]);
+  }, [selectedGroupId, token]);
 
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
@@ -156,25 +154,31 @@ const ProjectDetailsForm: React.FC<ProjectDetailsFormProps> = ({ walletAddress, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      setError('Authentication token is missing. Please ensure you are logged in.');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
 
     let groupId = selectedGroupId;
     let projectId = selectedProjectId;
 
     try {
       if (isAddingNewGroup) {
-        const newGroup = await createGroup(newGroupName);
+        const newGroup = await createGroup(token, newGroupName);
         groupId = newGroup.id;
       }
 
       if (isAddingNewProject) {
-        const newProject = await createProject(groupId, newProjectName);
+        const newProject = await createProject(token, groupId, newProjectName);
         projectId = newProject.id;
       }
 
       if (groupId && projectId) {
-        await addWalletToProject(projectId, walletAddress, blockchain);
-        const projectData = await getProjectByWallet(walletAddress, blockchain);
+        await addWalletToProject(token, projectId, walletAddress, blockchain);
+        const projectData = await getProjectByWallet(token, walletAddress, blockchain);
         setProject(projectData);
         updateData((prevData) => ({
           project_id: projectData.id,

@@ -24,6 +24,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [ss58Format, setSS58Format] = useState<number | null>(null);
+  const [hasCheckedWalletStatus, setHasCheckedWalletStatus] = useState(false);
 
   useEffect(() => {
     initPolkadotExtension();
@@ -45,7 +46,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
         setTokenDecimals(decimals);
         setApi(api);
 
-        // Get the SS58 format for the current chain
         const ss58Format: any = api.registry.chainSS58;
         console.log('Chain SS58 format:', ss58Format);
         setSS58Format(ss58Format);
@@ -53,7 +53,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
         setLoading(false);
         console.log('Polkadot API setup complete');
 
-        // Fetch accounts for the new provider
         await fetchAndFilterAccounts(ss58Format);
       } catch (error) {
         console.error('Error setting up Polkadot API:', error);
@@ -78,7 +77,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       await enableExtension('Your App Name');
       const allAccounts = await getAccounts();
       
-      // Filter and format accounts based on the chain's SS58 format
       const filteredAccounts = allAccounts.map((account: any) => ({
         ...account,
         address: encodeAddress(decodeAddress(account.address), chainSS58Format)
@@ -86,7 +84,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
 
       setAccounts(filteredAccounts);
 
-      // Reset selected account when changing providers
       setSelectedAccount(null);
       localStorage.removeItem('selectedAccount');
 
@@ -277,6 +274,8 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
           ...prevTxData,
           authToken: token
         }));
+
+        setHasCheckedWalletStatus(false);
       } else {
         console.error('Authentication failed', await response.text());
       }
@@ -287,6 +286,22 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     }
   };
 
+  useEffect(() => {
+    const checkWalletStatusAfterAuth = async () => {
+      if (isConnected && selectedAccount && api && authToken && !hasCheckedWalletStatus) {
+        console.log('Checking wallet status after authentication...');
+        try {
+          await checkWalletStatus(api, selectedAccount, selectedProvider, authToken);
+          setHasCheckedWalletStatus(true);
+        } catch (error) {
+          console.error('Error checking wallet status:', error);
+        }
+      }
+    };
+
+    checkWalletStatusAfterAuth();
+  }, [isConnected, selectedAccount, api, authToken, selectedProvider, hasCheckedWalletStatus]);
+
   const connectWallet = async () => {
     const connected = await checkForWalletConnection();
     if (connected) {
@@ -294,6 +309,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       localStorage.setItem('polkadotWalletConnected', 'true');
       if (selectedAccount) {
         localStorage.setItem('selectedAccount', selectedAccount);
+        setHasCheckedWalletStatus(false);
         await authenticate();
       }
     }
@@ -323,7 +339,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     }
   }, [isConnected, selectedAccount, authToken, isAuthenticating]);
 
-
   useEffect(() => {
     const storedToken = localStorage.getItem('polkadotAuthToken');
     if (storedToken) {
@@ -337,7 +352,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
 
   const handleProviderChange = useCallback((newProvider: string) => {
     setSelectedProvider(newProvider);
-    // Reset selected account when changing providers
     setSelectedAccount(null);
     localStorage.removeItem('selectedAccount');
   }, []);
@@ -355,8 +369,6 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
       fetchBalance();
     }
   }, [api, setPolkadotData, fetchBalance]);
-
-  //console.log( "txData", txData);
   
   return {
     accounts,
@@ -374,6 +386,7 @@ export const usePolkadotWallet = (isConnected: boolean, onConnectionChange: (con
     authToken,
     authenticate,
     isConnected,
-    isAuthenticating
+    isAuthenticating,
+    hasCheckedWalletStatus
   };
 };

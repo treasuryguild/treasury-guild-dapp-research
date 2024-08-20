@@ -14,21 +14,40 @@ const PolkadotWalletConnect: React.FC = () => {
     tokens,
     selectedProvider,
     PROVIDERS,
-    isConnected
+    isConnected,
+    authToken
   } = polkadotWallet;
 
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [hasCheckedWallet, setHasCheckedWallet] = useState(false);
 
   useEffect(() => {
     const checkWallet = async () => {
-      if (selectedAccount) {
-        const exists = await checkWalletExists(selectedAccount, 'Polkadot');
-        setShowProjectForm(!exists);
+      if (selectedAccount && authToken && !hasCheckedWallet) {
+        console.log("Checking wallet existence...");
+        try {
+          const exists = await checkWalletExists(authToken, selectedAccount, 'Polkadot');
+          console.log("Wallet exists:", exists);
+          setShowProjectForm(!exists);
+        } catch (error) {
+          console.error("Error checking wallet:", error);
+        } finally {
+          setHasCheckedWallet(true);
+        }
       }
     };
 
     checkWallet();
+  }, [selectedAccount, authToken, hasCheckedWallet]);
+
+  useEffect(() => {
+    // Reset hasCheckedWallet when the account or provider changes
+    if (selectedAccount || selectedProvider) {
+      setHasCheckedWallet(false);
+    }
   }, [selectedAccount, selectedProvider]);
+
+  console.log("Render - isConnected:", isConnected, "selectedAccount:", selectedAccount, "authToken:", authToken, "showProjectForm:", showProjectForm);
 
   if (!isConnected || !selectedAccount) {
     return null; // Don't render anything if not connected or no account selected
@@ -36,11 +55,14 @@ const PolkadotWalletConnect: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      {showProjectForm && authToken && (
         <ProjectDetailsForm 
           walletAddress={selectedAccount} 
           blockchain="Polkadot" 
           provider={selectedProvider}
+          token={authToken}
         />
+      )}
       <p className={styles.balance}>
         Balance: {loading ? 'Loading...' : `${balance} ${
           (tokens.find((token: any) => token.name === PROVIDERS.find((provider) => provider.url === selectedProvider)?.name) as any)?.symbol || ''

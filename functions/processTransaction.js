@@ -14,17 +14,26 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 
 export async function handler(event, context) {
   console.log('Received event:', JSON.stringify(event, null, 2));
+  console.log('Event body type:', typeof event.body);
   console.log('Event body:', event.body);
-  const contentType = event.headers['content-type'];
-  if (contentType !== 'application/json') {
+
+  let jsonData;
+  try {
+    // Check if the body is already an object
+    if (typeof event.body === 'object') {
+      jsonData = event.body;
+    } else {
+      // If it's a string, try to parse it
+      jsonData = JSON.parse(event.body);
+    }
+    console.log('Processed JSON data:', JSON.stringify(jsonData, null, 2));
+  } catch (error) {
+    console.error('Error processing JSON:', error);
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid content type. Expected application/json.' }),
+      body: JSON.stringify({ error: 'Invalid JSON in request body' })
     };
   }
-
-  const { record } = JSON.parse(event.body);
-  const jsonData = record.json_data;
 
   try {
     // Explicitly set the role to bypass RLS

@@ -8,7 +8,7 @@ import styles from '../../styles/WalletControls.module.css';
 
 const CardanoCustomConnectButton: React.FC = () => {
   const [availableWallets, setAvailableWallets] = useState<any[]>([]);
-  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
+  const [selectedWallet, setSelectedWallet] = useState<string>('');
   const [wallet, setWallet] = useState<any>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { cardanoData, setCardanoData } = useCardanoData();
@@ -28,7 +28,7 @@ const CardanoCustomConnectButton: React.FC = () => {
       if (isCardanoConnected && selectedWallet) {
         const connectedWallet = await BrowserWallet.enable(selectedWallet);
         setWallet(connectedWallet);
-        await updateWalletInfo(connectedWallet);
+        await updateWalletInfo(connectedWallet, selectedWallet);
       }
     };
     reconnectWallet();
@@ -37,7 +37,7 @@ const CardanoCustomConnectButton: React.FC = () => {
   useEffect(() => {
     const refreshWalletInfo = async () => {
       if (selectedBlockchain === 'Cardano' && isCardanoConnected && wallet) {
-        await updateWalletInfo(wallet);
+        await updateWalletInfo(wallet, selectedWallet);
       }
     };
     refreshWalletInfo();
@@ -47,13 +47,13 @@ const CardanoCustomConnectButton: React.FC = () => {
     if (selectedWallet) {
       const connectedWallet = await BrowserWallet.enable(selectedWallet);
       setWallet(connectedWallet);
-      setIsCardanoConnected(true);
-      await updateWalletInfo(connectedWallet);
+      await updateWalletInfo(connectedWallet, selectedWallet);
       await startLoginProcess(connectedWallet);
+      setIsCardanoConnected(true);
     }
   };
 
-  const updateWalletInfo = async (connectedWallet: any) => {
+  const updateWalletInfo = async (connectedWallet: any, selectedWallet: string) => {
     const rewardAddresses = await connectedWallet.getRewardAddresses();
     const walletAddress = await connectedWallet.getUsedAddresses();
     const balance = await connectedWallet.getBalance();
@@ -62,7 +62,7 @@ const CardanoCustomConnectButton: React.FC = () => {
       wallet: walletAddress[0],
       ada_wallet_stake_address: rewardAddresses[0],
       balance: balance,
-      provider: 'Cardano',
+      provider: selectedWallet,
     }));
   };
 
@@ -127,14 +127,14 @@ const CardanoCustomConnectButton: React.FC = () => {
   const disconnectWallet = () => {
     setWallet(null);
     setIsCardanoConnected(false);
-    setSelectedWallet(null);
+    setSelectedWallet('');
     setCardanoData((prevTxData) => ({
       ...prevTxData,
       wallet: '',
       ada_wallet_stake_address: '',
       balance: '',
       provider: '',
-      authToken: null,
+      authToken: '',
     }));
 
   };

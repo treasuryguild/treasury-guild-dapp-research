@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useWallet } from '../../context/WalletContext';
 import ProjectDetailsForm from '../ProjectDetailsForm';
 import styles from '../../styles/PolkadotWalletConnect.module.css';
-import { checkWalletExists } from '../../utils/walletReg';
+import { checkWalletExists, getProjectByWallet } from '../../utils/walletReg';
+import { usePolkadotData } from '../../context/PolkadotContext';
 
 const PolkadotWalletConnect: React.FC = () => {
   const { polkadotWallet } = useWallet();
@@ -20,6 +21,8 @@ const PolkadotWalletConnect: React.FC = () => {
 
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [hasCheckedWallet, setHasCheckedWallet] = useState(false);
+  const [project, setProject] = useState(false);
+  const { polkadotData, setPolkadotData } = usePolkadotData();
 
   useEffect(() => {
     const checkWallet = async () => {
@@ -29,6 +32,17 @@ const PolkadotWalletConnect: React.FC = () => {
           const exists = await checkWalletExists(authToken, selectedAccount, 'Polkadot');
           console.log("Wallet exists:", exists);
           setShowProjectForm(!exists);
+          if (exists) {
+            const projectDetails = await getProjectByWallet(authToken, selectedAccount, 'Polkadot');
+            console.log("Project found:", projectDetails);
+            setProject(projectDetails.name);
+            setPolkadotData((prevTxData) => ({
+              ...prevTxData,
+              group: projectDetails.groups.name,
+              project: projectDetails.name,
+              project_id: projectDetails.id,
+            }));
+          }
         } catch (error) {
           console.error("Error checking wallet:", error);
         } finally {
@@ -64,6 +78,7 @@ const PolkadotWalletConnect: React.FC = () => {
         />
       )}
       <p className={styles.balance}>
+        {project} - 
         Balance: {loading ? 'Loading...' : `${balance} ${
           (tokens.find((token: any) => token.name === PROVIDERS.find((provider) => provider.url === selectedProvider)?.name) as any)?.symbol || ''
         }`}

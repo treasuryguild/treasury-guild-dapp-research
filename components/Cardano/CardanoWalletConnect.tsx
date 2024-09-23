@@ -1,23 +1,31 @@
 // components/Cardano/CardanoWalletConnect.tsx
 import React, { useEffect, useState } from 'react';
-import { useWallet } from '@meshsdk/react';
+import { useWallet } from '../../context/WalletContext';
+import { useCardanoData } from '../../context/CardanoContext';
 import ProjectDetailsForm from '../ProjectDetailsForm';
+//import { checkWalletExists, getProjectByWallet } from '../../utils/walletReg';
+import { BrowserWallet } from '@meshsdk/core';
 
 const CardanoWalletConnect: React.FC = () => {
-  const { connected, wallet } = useWallet();
+  const { cardanoWallet, isCardanoConnected, selectedBlockchain } = useWallet(); 
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { cardanoData, setCardanoData } = useCardanoData();
   
   useEffect(() => {
     const getWalletAddress = async () => {
-      if (connected) {
+      if (isCardanoConnected) {
         setLoading(true);
         setError(null);
         try {
-          const usedAddresses = await wallet.getUsedAddresses();
-          if (usedAddresses.length > 0) {
-            setWalletAddress(usedAddresses[0]);
+          //console.log("Used addresses:", cardanoData);
+          const wallet = await BrowserWallet.enable(cardanoData.provider);
+          const walletAddress = await wallet.getUsedAddresses();
+          //const projectDetails = await getProjectByWallet(cardanoData.authToken, walletAddress[0], 'Cardano');
+          if (true) {
+            setWalletAddress(walletAddress[0]);
+            //console.log("Wallet address using browser wallet:", walletAddress[0], projectDetails);
           } else {
             setError("No used addresses found in the wallet.");
           }
@@ -33,9 +41,9 @@ const CardanoWalletConnect: React.FC = () => {
     };
 
     getWalletAddress();
-  }, [connected, wallet]);
+  }, [isCardanoConnected]);
   
-  if (!connected) {
+  if (!isCardanoConnected) {
     return <div>Please connect your Cardano wallet.</div>;
   }
 
@@ -50,7 +58,7 @@ const CardanoWalletConnect: React.FC = () => {
   return (
     <div>
       {walletAddress ? (
-        <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" provider='Cardano' token=''/>
+        <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" provider='Cardano' token={cardanoData.authToken}/>
       ) : (
         <div>No wallet address available. Please try reconnecting your wallet.</div>
       )}

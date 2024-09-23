@@ -14,7 +14,7 @@ interface ProjectDetailsFormProps {
   walletAddress: string;
   blockchain: 'Polkadot' | 'Cardano';
   provider: string;
-  token: string;
+  token: string | null;
 }
 
 interface Group {

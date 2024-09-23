@@ -1,6 +1,5 @@
 // ../context/CardanoDataContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { PROVIDERS } from '../constants/providers'; 
 
 export interface CardanoData {
   group: string;
@@ -69,7 +68,7 @@ export const CardanoDataProvider: React.FC<CardanoDataProviderProps> = ({ childr
     txtype:'',
     budget_month: new Date().toISOString().slice(0, 7),
     send_message:true,
-    provider: PROVIDERS[0].url, // Set the default provider
+    provider: '', 
     tokens: [],
     authToken: null,
   });

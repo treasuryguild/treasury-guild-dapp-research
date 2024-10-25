@@ -21,10 +21,10 @@ const CardanoWalletConnect: React.FC = () => {
         try {
           //console.log("Used addresses:", cardanoData);
           const wallet = await BrowserWallet.enable(cardanoData.provider);
-          const walletAddress = await wallet.getUsedAddresses();
+          const usedWalletAddress = await wallet.getUsedAddresses();
           //const projectDetails = await getProjectByWallet(cardanoData.authToken, walletAddress[0], 'Cardano');
           if (true) {
-            setWalletAddress(walletAddress[0]);
+            setWalletAddress(usedWalletAddress[0]);
             //console.log("Wallet address using browser wallet:", walletAddress[0], projectDetails);
           } else {
             setError("No used addresses found in the wallet.");
@@ -58,7 +58,7 @@ const CardanoWalletConnect: React.FC = () => {
   return (
     <div>
       {walletAddress ? (
-        <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" provider='Cardano' token={cardanoData.authToken}/>
+        <ProjectDetailsForm walletAddress={walletAddress} blockchain="Cardano" provider={cardanoData.provider} token={cardanoData.authToken}/>
       ) : (
         <div>No wallet address available. Please try reconnecting your wallet.</div>
       )}
